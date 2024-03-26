@@ -65,7 +65,7 @@ func handleUpdateMetric(ms *MemStorage) http.HandlerFunc {
 		metricValue := parts[2]
 
 		// чекаем корректность названия метрики
-		if IsCorrectType(metricType) == false {
+		if !IsCorrectType(metricType) {
 			http.Error(w, "Указано не корректное значение для типа метрики", http.StatusBadRequest)
 			return
 		}
