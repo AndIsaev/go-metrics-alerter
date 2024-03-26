@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -22,7 +21,6 @@ func NewMemStorage() *MemStorage {
 }
 
 func (ms *MemStorage) Update(metricType, metricName string, metricValue interface{}) {
-	fmt.Println(metricType, metricName, metricValue)
 	key := metricType + "/" + metricName
 	if val, ok := ms.metrics[key]; ok {
 		switch metricType {
@@ -39,7 +37,6 @@ func (ms *MemStorage) Update(metricType, metricName string, metricValue interfac
 func handleUpdateMetric(ms *MemStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		fmt.Println(w, r)
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -47,7 +44,6 @@ func handleUpdateMetric(ms *MemStorage) http.HandlerFunc {
 		// получаем параметры
 		params := r.URL.Path[len("/update/"):]
 		parts := strings.Split(params, "/")
-		fmt.Println(parts)
 
 		// чекаем корректность урла
 		if len(parts) != 3 {
@@ -69,7 +65,6 @@ func handleUpdateMetric(ms *MemStorage) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/plain")
 
 		w.WriteHeader(http.StatusOK)
-		fmt.Println(ms.metrics)
 
 	}
 }
