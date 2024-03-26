@@ -6,14 +6,12 @@ import (
 	"strings"
 )
 
-type Middleware func(http.Handler) http.Handler
-
-var gauge string = "gauge"
-var counter string = "counter"
-
 type MemStorage struct {
 	metrics map[string]interface{}
 }
+
+var gauge = "gauge"
+var counter = "counter"
 
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
@@ -56,7 +54,7 @@ func handleUpdateMetric(ms *MemStorage) http.HandlerFunc {
 
 		// чекаем корректность урла
 		if len(parts) != 3 {
-			http.Error(w, "Not correct format URL", http.StatusBadRequest)
+			http.Error(w, "Not correct format URL", http.StatusNotFound)
 			return
 		}
 
