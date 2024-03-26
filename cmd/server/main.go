@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -20,6 +21,16 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
+func IsCorrectType(metricType string) bool {
+	for _, v := range []string{counter, gauge} {
+		if v == metricType {
+			return true
+		}
+	}
+	return false
+
+}
+
 func (ms *MemStorage) Update(metricType, metricName string, metricValue interface{}) {
 	key := metricType + "/" + metricName
 	if val, ok := ms.metrics[key]; ok {
@@ -29,8 +40,6 @@ func (ms *MemStorage) Update(metricType, metricName string, metricValue interfac
 		case "counter":
 			ms.metrics[key] = val.(int64) + metricValue.(int64)
 		}
-	} else {
-		ms.metrics[key] = metricValue
 	}
 }
 
@@ -56,8 +65,24 @@ func handleUpdateMetric(ms *MemStorage) http.HandlerFunc {
 		metricValue := parts[2]
 
 		// чекаем корректность названия метрики
+		if IsCorrectType(metricType) == false {
+			http.Error(w, "Указано не корректное значение для типа метрики", http.StatusBadRequest)
+			return
+		}
+
 		if metricName == "" {
 			http.Error(w, "Имя метрики не указано", http.StatusNotFound)
+			return
+		}
+		val, err := strconv.Atoi(metricValue)
+		if err != nil {
+			http.Error(w, "Указано не корректное значение", http.StatusBadRequest)
+			return
+		}
+		metricValue = strconv.Itoa(val)
+
+		if metricValue == "" {
+			http.Error(w, "Не указано значение", http.StatusBadRequest)
 			return
 		}
 
