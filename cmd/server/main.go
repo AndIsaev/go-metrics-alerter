@@ -48,11 +48,9 @@ func handleUpdateMetric(ms *MemStorage) http.HandlerFunc {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		// получаем параметры
 		params := r.URL.Path[len("/update/"):]
 		parts := strings.Split(params, "/")
 
-		// чекаем корректность урла
 		if len(parts) != 3 {
 			http.Error(w, "Not correct format URL", http.StatusNotFound)
 			return
