@@ -86,7 +86,6 @@ func postRequest(url, contentType string, body []byte) {
 	}
 
 	defer resp.Body.Close()
-	return
 }
 
 func sendReport(m Metrics) {
