@@ -28,7 +28,6 @@ type Metrics []struct {
 }
 
 func getMetrics() Metrics {
-	fmt.Println("Update metrics")
 	PollCount++
 
 	runtime.ReadMemStats(&memStats)
@@ -91,9 +90,6 @@ func postRequest(url, contentType string, body []byte) {
 func sendReport(m Metrics) {
 	for _, v := range m {
 		url := fmt.Sprintf(address, v.metricType, v.name, v.value)
-		fmt.Println("++")
-		fmt.Println(url)
-		fmt.Println("++")
 		postRequest(url, "text/plain", nil)
 	}
 }
