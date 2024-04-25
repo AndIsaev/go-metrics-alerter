@@ -28,6 +28,7 @@ type Metrics []struct {
 }
 
 func getMetrics() Metrics {
+	time.Sleep(pollInterval * time.Second)
 	PollCount++
 
 	runtime.ReadMemStats(&memStats)
@@ -67,14 +68,14 @@ func getMetrics() Metrics {
 	return metrics
 }
 
-func writeToChannel(c chan<- Metrics, metrics Metrics) {
-	c <- metrics
-}
-
-func readFromChannel(metrics <-chan Metrics) Metrics {
-	m := <-metrics
-	return m
-}
+//func writeToChannel(c chan<- Metrics, metrics Metrics) {
+//	c <- metrics
+//}
+//
+//func readFromChannel(metrics <-chan Metrics) Metrics {
+//	m := <-metrics
+//	return m
+//}
 
 func postRequest(url, contentType string, body []byte) {
 
@@ -88,6 +89,8 @@ func postRequest(url, contentType string, body []byte) {
 }
 
 func sendReport(m Metrics) {
+	time.Sleep(reportInterval * time.Second)
+
 	for _, v := range m {
 		url := fmt.Sprintf(address, v.metricType, v.name, v.value)
 		postRequest(url, "text/plain", nil)
@@ -95,22 +98,25 @@ func sendReport(m Metrics) {
 }
 
 func main() {
-	ch := make(chan Metrics)
 
-	metricsTick := time.NewTicker(pollInterval * time.Second)
-	reportTick := time.NewTicker(reportInterval * time.Second)
+	newMetrics := getMetrics()
+	sendReport(newMetrics)
+	//ch := make(chan Metrics)
 
-	for {
-		select {
-		case <-metricsTick.C:
-
-			newMetrics := getMetrics()
-			go writeToChannel(ch, newMetrics)
-		case <-reportTick.C:
-			v := readFromChannel(ch)
-			go sendReport(v)
-		}
-
-	}
+	//metricsTick := time.NewTicker(pollInterval * time.Second)
+	//reportTick := time.NewTicker(reportInterval * time.Second)
+	//
+	//for {
+	//	select {
+	//	case <-metricsTick.C:
+	//
+	//		newMetrics := getMetrics()
+	//		go writeToChannel(ch, newMetrics)
+	//	case <-reportTick.C:
+	//		v := readFromChannel(ch)
+	//		go sendReport(v)
+	//	}
+	//
+	//}
 
 }
