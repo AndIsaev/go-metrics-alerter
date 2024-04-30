@@ -1,5 +1,7 @@
 package storage
 
+import "github.com/AndIsaev/go-metrics-alerter/internal/common"
+
 type MemStorage struct {
 	metrics map[string]interface{}
 }
@@ -14,9 +16,9 @@ func (ms *MemStorage) Update(metricType, metricName string, metricValue interfac
 	key := metricType + "/" + metricName
 	if val, ok := ms.metrics[key]; ok {
 		switch metricType {
-		case "gauge":
+		case common.Gauge:
 			ms.metrics[key] = metricValue
-		case "counter":
+		case common.Counter:
 			ms.metrics[key] = val.(int64) + metricValue.(int64)
 		}
 	}
