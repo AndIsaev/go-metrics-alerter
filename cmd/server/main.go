@@ -10,7 +10,9 @@ func main() {
 	mux := http.NewServeMux()
 	ms := storage.NewMemStorage()
 
-	mux.HandleFunc(`/update/`, handlers.UpdateMetricHandler(ms))
+	mux.HandleFunc(`/update/`, func(w http.ResponseWriter, r *http.Request) {
+		handlers.UpdateMetricHandler(ms, w, r)
+	})
 
 	err := http.ListenAndServe(`:8080`, mux)
 	if err != nil {

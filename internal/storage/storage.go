@@ -1,6 +1,8 @@
 package storage
 
-import "github.com/AndIsaev/go-metrics-alerter/internal/common"
+import (
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+)
 
 type MemStorage struct {
 	metrics map[string]interface{}
@@ -14,12 +16,17 @@ func NewMemStorage() *MemStorage {
 
 func (ms *MemStorage) Update(metricType, metricName string, metricValue interface{}) {
 	key := metricType + "/" + metricName
-	if val, ok := ms.metrics[key]; ok {
-		switch metricType {
-		case common.Gauge:
-			ms.metrics[key] = metricValue
-		case common.Counter:
-			ms.metrics[key] = val.(int64) + metricValue.(int64)
+	switch metricType {
+	case common.Gauge:
+		ms.metrics[key] = metricValue
+	case common.Counter:
+		if newVal, res := metricValue.(int64); res {
+
+			if val, ok := ms.metrics[key].(int64); ok {
+				ms.metrics[key] = val + newVal
+			} else {
+				ms.metrics[key] = metricValue
+			}
 		}
 	}
 }
