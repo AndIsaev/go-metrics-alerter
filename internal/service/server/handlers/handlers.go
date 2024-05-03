@@ -39,7 +39,10 @@ func UpdateMetricHandler(ms *storage.MemStorage, w http.ResponseWriter, r *http.
 		return
 	}
 
-	ms.Update(metricType, metricName, metricVal)
+	if err := ms.Add(metricType, metricName, metricVal); err != nil {
+		http.Error(w, "Incorrect type of value for type metric", http.StatusBadRequest)
+		return
+	}
 	w.Header().Set("Content-Type", "text/plain")
 
 	w.WriteHeader(http.StatusOK)
