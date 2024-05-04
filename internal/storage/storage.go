@@ -40,12 +40,12 @@ func (metric *MetricValue) SetValue(metricType string, value interface{}) error 
 }
 
 type MemStorage struct {
-	metrics map[MetricKey]interface{}
+	Metrics map[MetricKey]interface{}
 }
 
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
-		metrics: make(map[MetricKey]interface{}),
+		Metrics: make(map[MetricKey]interface{}),
 	}
 }
 
@@ -60,14 +60,14 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 
 	switch metricType {
 	case common.Gauge:
-		ms.metrics[key] = newMetricValue.FloatValue
+		ms.Metrics[key] = newMetricValue.FloatValue
 		return nil
 	case common.Counter:
-		if val, ok := ms.metrics[key].(int64); ok {
-			ms.metrics[key] = val + newMetricValue.IntValue
+		if val, ok := ms.Metrics[key].(int64); ok {
+			ms.Metrics[key] = val + newMetricValue.IntValue
 			return nil
 		} else {
-			ms.metrics[key] = metricValue
+			ms.Metrics[key] = metricValue
 			return nil
 		}
 	}
