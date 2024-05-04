@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/request"
 
 	"fmt"
 	"time"
@@ -13,16 +13,23 @@ const (
 	reportInterval time.Duration = 10
 )
 
-func sendReport(m metrics.Metrics) {
+func sendReport(m metrics.Metrics) error {
 	time.Sleep(reportInterval * time.Second)
 
 	for _, v := range m {
 		url := fmt.Sprintf(address, v.MetricType, v.Name, v.Value)
-		request.SendMetricsHandler(url, "text/plain", nil)
+		err := client.SendMetricsClient(url, "text/plain", []byte{})
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func main() {
 	newMetrics := metrics.GetMetrics()
-	sendReport(newMetrics)
+	err := sendReport(newMetrics)
+	if err != nil {
+		return
+	}
 }
