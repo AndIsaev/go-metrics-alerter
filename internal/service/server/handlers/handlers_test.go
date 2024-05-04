@@ -57,12 +57,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 			// проверяем код ответа
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			// получаем и проверяем тело запроса
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-
-				}
-			}(res.Body)
+			defer res.Body.Close()
 			resBody, err := io.ReadAll(res.Body)
 
 			require.NoError(t, err)
@@ -130,12 +125,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 			// проверяем код ответа
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			// получаем и проверяем тело запроса
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-
-				}
-			}(res.Body)
+			defer res.Body.Close()
 			_, err := io.ReadAll(res.Body)
 
 			require.NoError(t, err)
