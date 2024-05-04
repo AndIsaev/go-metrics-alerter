@@ -11,7 +11,7 @@ import (
 )
 
 func TestUpdateMetricHandler(t *testing.T) {
-	var mockStorage storage.MemStorage = storage.MemStorage{
+	var mockStorage = storage.MemStorage{
 		Metrics: make(map[storage.MetricKey]interface{}),
 	}
 
@@ -79,7 +79,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 }
 
 func TestUpdateMetricHandlerError(t *testing.T) {
-	var mockStorage storage.MemStorage = storage.MemStorage{
+	var mockStorage = storage.MemStorage{
 		Metrics: make(map[storage.MetricKey]interface{}),
 	}
 
