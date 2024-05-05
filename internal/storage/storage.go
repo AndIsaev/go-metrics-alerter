@@ -54,7 +54,6 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 
 	newMetricValue := &MetricValue{}
 	if err := newMetricValue.SetValue(metricType, metricValue); err != nil {
-		println(err)
 		return ErrIncorrectMetricValue
 	}
 
