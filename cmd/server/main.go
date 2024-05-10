@@ -1,20 +1,17 @@
 package main
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handler/metric"
 	"net/http"
+
+	"github.com/go-chi/chi"
 )
 
 func main() {
-	mux := http.NewServeMux()
-	ms := storage.NewMemStorage()
+	r := chi.NewRouter()
+	r.Mount(`/update/`, metric.MetricRouter())
 
-	mux.HandleFunc(`/update/`, func(w http.ResponseWriter, r *http.Request) {
-		handlers.UpdateMetricHandler(ms, w, r)
-	})
-
-	err := http.ListenAndServe(`:8080`, mux)
+	err := http.ListenAndServe(`:8080`, r)
 	if err != nil {
 		panic(err)
 	}

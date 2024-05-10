@@ -43,11 +43,14 @@ type MemStorage struct {
 	Metrics map[MetricKey]interface{}
 }
 
+// NewMemStorage - return new var of MemStorage
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
 		Metrics: make(map[MetricKey]interface{}),
 	}
 }
+
+var MS = NewMemStorage()
 
 func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}) error {
 	key := MetricKey(metricType + "/" + metricName)

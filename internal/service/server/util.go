@@ -1,13 +1,16 @@
 package server
 
 import (
+	"errors"
+	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"strconv"
 )
 
-func IsCorrectType(metricType string) bool {
+// IsCorrectType - check correct type for Metrics
+func IsCorrectType(MetricType string) bool {
 	for _, v := range []string{common.Counter, common.Gauge} {
-		if v == metricType {
+		if v == MetricType {
 
 			return true
 		}
@@ -15,18 +18,18 @@ func IsCorrectType(metricType string) bool {
 	return false
 }
 
-func DefineMetricValue(metricType string, metricValue string) interface{} {
-	switch metricType {
+// DefineMetricValue - define correct value for type of Metrics
+func DefineMetricValue(MetricType string, MetricValue string) (interface{}, error) {
+	switch MetricType {
 	case common.Gauge:
-		val, err := strconv.ParseFloat(metricValue, 64)
-		if err == nil {
-			return val
+		if val, err := strconv.ParseFloat(MetricValue, 64); err == nil {
+			return val, nil
 		}
 	case common.Counter:
-		val, err := strconv.ParseInt(metricValue, 10, 64)
-		if err == nil {
-			return val
+		if val, err := strconv.ParseInt(MetricValue, 10, 64); err == nil {
+			return val, nil
 		}
 	}
-	return nil
+	err := fmt.Sprintf("incorrect value for %v type", MetricType)
+	return nil, errors.New(err)
 }
