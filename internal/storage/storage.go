@@ -1,11 +1,8 @@
 package storage
 
 import (
-	"errors"
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
-
-var ErrIncorrectMetricValue = errors.New("incorrect value for metric")
 
 type MetricKey string
 
@@ -13,6 +10,19 @@ type MetricValue struct {
 	IntValue   int64
 	FloatValue float64
 }
+
+type MemStorage struct {
+	Metrics map[MetricKey]interface{}
+}
+
+// NewMemStorage - return new var of MemStorage
+func NewMemStorage() *MemStorage {
+	return &MemStorage{
+		Metrics: make(map[MetricKey]interface{}),
+	}
+}
+
+var MS = NewMemStorage()
 
 func (metric *MetricValue) SetValue(metricType string, value interface{}) error {
 	if value == nil {
@@ -39,21 +49,13 @@ func (metric *MetricValue) SetValue(metricType string, value interface{}) error 
 	return ErrIncorrectMetricValue
 }
 
-type MemStorage struct {
-	Metrics map[MetricKey]interface{}
+func GetMetricKey(metricType, metricName string) MetricKey {
+	key := MetricKey(metricType + "/" + metricName)
+	return key
 }
-
-// NewMemStorage - return new var of MemStorage
-func NewMemStorage() *MemStorage {
-	return &MemStorage{
-		Metrics: make(map[MetricKey]interface{}),
-	}
-}
-
-var MS = NewMemStorage()
 
 func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}) error {
-	key := MetricKey(metricType + "/" + metricName)
+	key := GetMetricKey(metricType, metricName)
 
 	newMetricValue := &MetricValue{}
 	if err := newMetricValue.SetValue(metricType, metricValue); err != nil {
@@ -74,4 +76,24 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 		}
 	}
 	return ErrIncorrectMetricValue
+}
+
+func (ms *MemStorage) Ping() error {
+	if err := ms.Metrics; err == nil {
+		return ErrNotInitializedStorage
+	}
+	return nil
+}
+
+func (ms *MemStorage) Get(metricType, metricName string) (interface{}, error) {
+	if err := ms.Ping(); err != nil {
+		return nil, err
+	}
+	key := GetMetricKey(metricType, metricName)
+
+	if val, ok := ms.Metrics[key]; !ok {
+		return nil, ErrKeyErrorStorage
+	} else {
+		return val, nil
+	}
 }

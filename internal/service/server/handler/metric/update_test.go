@@ -14,7 +14,7 @@ import (
 
 func TestUpdateMetricHandler(t *testing.T) {
 	r := chi.NewRouter()
-	r.Mount(`/update/`, MetricRouter())
+	r.Mount(`/update/`, UpdateMetricRouter())
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
@@ -97,7 +97,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 	ClearStorage()
 
 	r := chi.NewRouter()
-	r.Mount(`/update/`, MetricRouter())
+	r.Mount(`/update/`, UpdateMetricRouter())
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
