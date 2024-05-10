@@ -24,7 +24,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.
 }
 
 func ClearStorage() {
-	for key, _ := range storage.MS.Metrics {
+	for key := range storage.MS.Metrics {
 		delete(storage.MS.Metrics, key)
 	}
 }
