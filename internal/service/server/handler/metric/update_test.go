@@ -72,6 +72,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, tt.want.method, tt.want.address)
+			defer resp.Body.Close()
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.response, body)
@@ -92,6 +93,9 @@ func TestUpdateMetricHandler(t *testing.T) {
 }
 
 func TestUpdateMetricHandlerError(t *testing.T) {
+	// clear storage before tests
+	ClearStorage()
+
 	r := chi.NewRouter()
 	r.Mount(`/update/`, MetricRouter())
 
@@ -166,8 +170,10 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, tt.want.method, tt.want.address)
+			defer resp.Body.Close()
 
 			// создаём новый Recorder
 			assert.Equal(t, tt.want.code, resp.StatusCode)
