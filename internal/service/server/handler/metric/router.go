@@ -8,19 +8,17 @@ import (
 
 func UpdateMetricRouter() http.Handler {
 	r := chi.NewRouter()
-
-	r.Use(middleware.Logger, middleware.SetHeader("Content-Type", "text/plain"))
+	r.Use(middleware.SetHeader("Content-Type", "text/plain"))
 
 	// set value for metric
-	r.Post("/{MetricType}/{MetricName}/{MetricValue}", UpdateMetricHandler)
+	r.Post("/{MetricType}/{MetricName}/{MetricValue}", SetMetricHandler)
 
 	return r
 }
 
 func GetMetricRouter() http.Handler {
 	r := chi.NewRouter()
-
-	r.Use(middleware.Logger, middleware.SetHeader("Content-Type", "text/plain"))
+	r.Use(middleware.SetHeader("Content-Type", "text/plain"))
 
 	// get value of metric
 	r.Get("/{MetricType}/{MetricName}", GetMetricHandler)

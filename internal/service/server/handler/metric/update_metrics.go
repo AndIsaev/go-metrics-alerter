@@ -1,14 +1,16 @@
 package metric
 
 import (
-	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
+
 	"github.com/go-chi/chi"
+
 	"net/http"
 )
 
-func GetMetricHandler(w http.ResponseWriter, r *http.Request) {
+func SetMetricHandler(w http.ResponseWriter, r *http.Request) {
+	var MetricValue interface{}
 	MetricType := chi.URLParam(r, "MetricType")
 	MetricName := chi.URLParam(r, "MetricName")
 
@@ -17,11 +19,17 @@ func GetMetricHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
 		return
 	}
-	if val, err := storage.MS.Get(MetricType, MetricName); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+
+	if val, err := server.DefineMetricValue(MetricType, chi.URLParam(r, "MetricValue")); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	} else {
-		w.Write([]byte(fmt.Sprintf("%v", val)))
+		MetricValue = val
+	}
+
+	if err := storage.MS.Add(MetricType, MetricName, MetricValue); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 }

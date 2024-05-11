@@ -49,13 +49,8 @@ func (metric *MetricValue) SetValue(metricType string, value interface{}) error 
 	return ErrIncorrectMetricValue
 }
 
-func GetMetricKey(metricType, metricName string) MetricKey {
-	key := MetricKey(metricType + "/" + metricName)
-	return key
-}
-
 func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}) error {
-	key := GetMetricKey(metricType, metricName)
+	key := MetricKey(metricName)
 
 	newMetricValue := &MetricValue{}
 	if err := newMetricValue.SetValue(metricType, metricValue); err != nil {
@@ -85,11 +80,11 @@ func (ms *MemStorage) Ping() error {
 	return nil
 }
 
-func (ms *MemStorage) Get(metricType, metricName string) (interface{}, error) {
+func (ms *MemStorage) Get(metricName string) (interface{}, error) {
 	if err := ms.Ping(); err != nil {
 		return nil, err
 	}
-	key := GetMetricKey(metricType, metricName)
+	key := MetricKey(metricName)
 
 	if val, ok := ms.Metrics[key]; !ok {
 		return nil, ErrKeyErrorStorage
