@@ -51,17 +51,33 @@ func TestGetMetricHandler(t *testing.T) {
 				method:   http.MethodGet,
 			},
 		},
+		{
+			name: "test #3 - case with counter type",
+			want: want{
+				code:     http.StatusOK,
+				response: "20",
+				address:  "/value/counter/pollCount",
+				key:      "counter/pollCount",
+				method:   http.MethodGet,
+				value:    20,
+			},
+		},
 	}
+	// data for test #3
+	storage.MS.Metrics["counter/pollCount"] = 20
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ClearStorage()
 
 			resp, body := testRequest(t, ts, tt.want.method, tt.want.address)
 			defer resp.Body.Close()
 
+			if tt.name != "test #3 - case with counter type" {
+				assert.Nil(t, storage.MS.Metrics[tt.want.key])
+			}
+
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.response, body)
-			assert.Nil(t, storage.MS.Metrics[tt.want.key])
+
 		})
 	}
 }
