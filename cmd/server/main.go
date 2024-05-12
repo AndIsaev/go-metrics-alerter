@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handler/metric"
 	"github.com/go-chi/chi/middleware"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 )
 
 func main() {
+	parseFlags()
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -16,7 +19,8 @@ func main() {
 	r.Mount(`/update/`, metric.UpdateMetricRouter())
 	r.Mount(`/value/`, metric.GetMetricRouter())
 
-	err := http.ListenAndServe(`:8080`, r)
+	fmt.Println("Running server on", flagRunAddr)
+	err := http.ListenAndServe(flagRunAddr, r)
 	if err != nil {
 		panic(err)
 	}
