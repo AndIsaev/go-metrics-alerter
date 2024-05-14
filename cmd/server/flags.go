@@ -1,18 +1,49 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
+	"strconv"
+	"strings"
 )
 
-// неэкспортированная переменная flagRunAddr содержит адрес и порт для запуска сервера
-var flagRunAddr string
+var flagRunAddr = ":8080"
 
-// parseFlags обрабатывает аргументы командной строки
-// и сохраняет их значения в соответствующих переменных
+type address struct {
+	host string
+	port int
+}
+
+func (a *address) String() string {
+	return a.host + ":" + strconv.Itoa(a.port)
+}
+
+func (a *address) Set(s string) error {
+	hp := strings.Split(s, ":")
+
+	if len(hp) != 2 {
+		return errors.New("need address in a form host:port")
+	}
+	port, err := strconv.Atoi(hp[1])
+	if err != nil {
+		return err
+	}
+	a.host = hp[0]
+	a.port = port
+	return nil
+}
+
 func parseFlags() {
-	// регистрируем переменную flagRunAddr
-	// как аргумент -a со значением :8080 по умолчанию
-	flag.StringVar(&flagRunAddr, "a", ":8080", "address and port to run server")
-	// парсим переданные серверу аргументы в зарегистрированные переменные
+	addr := new(address)
+
+	_ = flag.Value(addr)
+	flag.Var(addr, "a", "Net address host:port")
 	flag.Parse()
+
+	if addr.port == 0 {
+		return
+	}
+	flagRunAddr = fmt.Sprintf(":%v", addr.port)
+
 }

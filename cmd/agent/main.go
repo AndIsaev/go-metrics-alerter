@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	address        string        = "http://localhost:8080/update/%v/%v/%v"
 	reportInterval time.Duration = 10
 )
 
@@ -17,7 +16,7 @@ func sendReport(m metrics.Metrics) error {
 	time.Sleep(reportInterval * time.Second)
 
 	for _, v := range m {
-		url := fmt.Sprintf(address, v.MetricType, v.Name, v.Value)
+		url := fmt.Sprintf("%v/update/%v/%v/%v", flagRunAddr, v.MetricType, v.Name, v.Value)
 		err := client.SendMetricsClient(url, "text/plain", []byte{})
 		if err != nil {
 			return err
@@ -27,6 +26,8 @@ func sendReport(m metrics.Metrics) error {
 }
 
 func main() {
+	parseFlags()
+
 	newMetrics := metrics.GetMetrics()
 	err := sendReport(newMetrics)
 	if err != nil {
