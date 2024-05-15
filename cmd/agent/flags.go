@@ -42,7 +42,7 @@ func parseFlags() {
 	flag.Parse()
 
 	if addr.port == 0 {
-		flagRunAddr = fmt.Sprintf("http://localhost:8080")
+		flagRunAddr = "http://localhost:8080"
 		return
 	}
 	flagRunAddr = fmt.Sprintf("http://%v:%v", addr.host, addr.port)
