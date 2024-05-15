@@ -31,6 +31,6 @@ func main() {
 	newMetrics := metrics.GetMetrics()
 	err := sendReport(newMetrics)
 	if err != nil {
-		return
+		panic(err)
 	}
 }
