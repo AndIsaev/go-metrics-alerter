@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-const pollInterval time.Duration = 2
-
 var memStats runtime.MemStats
 var pollCount int
 
@@ -18,8 +16,8 @@ type Metrics []struct {
 	MetricType string
 }
 
-func GetMetrics() Metrics {
-	time.Sleep(pollInterval * time.Second)
+func GetMetrics(pollInterval time.Duration) Metrics {
+	time.Sleep(pollInterval)
 	pollCount++
 
 	runtime.ReadMemStats(&memStats)
