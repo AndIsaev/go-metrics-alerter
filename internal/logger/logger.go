@@ -69,8 +69,6 @@ func (r *loggingResponseWriter) Done() {
 	if r.responseData.status == 0 {
 		r.responseData.status = http.StatusOK
 	}
-
-	return
 }
 
 // ResponseLogger — middleware-логер ответов HTTP-запросов.
