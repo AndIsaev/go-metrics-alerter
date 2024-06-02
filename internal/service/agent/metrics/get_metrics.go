@@ -2,6 +2,9 @@ package metrics
 
 import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"github.com/AndIsaev/go-metrics-alerter/internal/common/models"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent"
 	"math/rand"
 	"runtime"
 	"time"
@@ -10,19 +13,19 @@ import (
 var memStats runtime.MemStats
 var pollCount int
 
-type Metrics []struct {
+type MetricsList []struct {
 	Name       string
 	Value      interface{}
 	MetricType string
 }
 
-func GetMetrics(pollInterval time.Duration) Metrics {
+func GetMetrics(pollInterval time.Duration) MetricsList {
 	time.Sleep(pollInterval)
 	pollCount++
 
 	runtime.ReadMemStats(&memStats)
 
-	metrics := Metrics{
+	metrics := MetricsList{
 		{Name: "Alloc", Value: memStats.Alloc, MetricType: common.Gauge},
 		{Name: "BuckHashSys", Value: memStats.BuckHashSys, MetricType: common.Gauge},
 		{Name: "Frees", Value: memStats.Frees, MetricType: common.Gauge},
@@ -54,5 +57,28 @@ func GetMetrics(pollInterval time.Duration) Metrics {
 		{Name: "RandomValue", Value: rand.Int(), MetricType: common.Counter},
 	}
 
+	return metrics
+}
+
+func GetMetricsV2(m MetricsList) []models.Metrics {
+	metrics := make([]models.Metrics, 0, 28)
+	metric := models.Metrics{}
+
+	for _, v := range m {
+		metric.ID = v.Name
+		metric.MType = v.MetricType
+
+		switch v.MetricType {
+		case common.Gauge:
+			if val, err := agent.GetFloat64(v.Value); err == nil {
+				metric.Value = &val
+			}
+		case common.Counter:
+			if val, err := agent.GetInt64(v.Value); err == nil {
+				metric.Delta = &val
+			}
+		}
+		metrics = append(metrics, metric)
+	}
 	return metrics
 }
