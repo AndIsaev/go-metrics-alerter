@@ -8,10 +8,10 @@ import (
 
 func UpdateMetricRouter() http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.SetHeader("Content-Type", "text/plain"))
 
 	// set value for metric
 	r.Post("/{MetricType}/{MetricName}/{MetricValue}", SetMetricHandler)
+	r.Post("/", SetMetricsHandler)
 
 	return r
 }

@@ -18,7 +18,7 @@ func run() error {
 	r := chi.NewRouter()
 	config := service.NewServerConfig()
 
-	r.Use(logger.RequestLogger, logger.ResponseLogger)
+	//r.Use(logger.RequestLogger, logger.ResponseLogger)
 
 	r.Mount(`/`, handlers.MainPageRouter())
 	r.Mount(`/update/`, handlers.UpdateMetricRouter())

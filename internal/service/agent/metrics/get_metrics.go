@@ -60,7 +60,7 @@ func GetMetrics(pollInterval time.Duration) MetricsList {
 	return metrics
 }
 
-func GetMetricsV2(m MetricsList) []models.Metrics {
+func ConvertMetrics(m MetricsList) []models.Metrics {
 	metrics := make([]models.Metrics, 0, 28)
 	metric := models.Metrics{}
 

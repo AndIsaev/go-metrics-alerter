@@ -6,7 +6,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 
 	"fmt"
@@ -20,13 +19,12 @@ func sendReport(reportInterval time.Duration, address string, m []models.Metrics
 		if body, err := json.Marshal(v); err == nil {
 
 			url := fmt.Sprintf("http://%v/update/", address)
-			e := client.SendMetricsClient(url, "application/json", body)
-			if e != nil {
+			if e := client.SendMetricsClient(url, "application/json", body); e != nil {
 				return e
 			}
 
 		} else {
-			logger.Log.Error(err.Error())
+			return err
 		}
 
 	}
@@ -37,7 +35,7 @@ func main() {
 	config := service.NewAgentConfig()
 
 	newMetrics := metrics.GetMetrics(config.PollInterval)
-	m := metrics.GetMetricsV2(newMetrics)
+	m := metrics.ConvertMetrics(newMetrics)
 
 	err := sendReport(config.ReportInterval, config.Address, m)
 	if err != nil {
