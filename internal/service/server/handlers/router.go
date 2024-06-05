@@ -22,6 +22,7 @@ func GetMetricRouter() http.Handler {
 
 	// get value of metric
 	r.Get("/{MetricType}/{MetricName}", GetMetricHandler)
+	r.Post("/", GetMetricsHandler)
 
 	return r
 }

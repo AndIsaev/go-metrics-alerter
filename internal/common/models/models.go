@@ -12,3 +12,8 @@ type MetricsResponse struct {
 	MType string      `json:"type"` // параметр, принимающий значение gauge или counter
 	Value interface{} `json:"value"`
 }
+
+type MetricsRequest struct {
+	ID    string `json:"id"`   // имя метрики
+	MType string `json:"type"` // параметр, принимающий значение gauge или counter
+}
