@@ -73,12 +73,12 @@ func SetMetricsHandler(w http.ResponseWriter, r *http.Request) {
 		response.MType = metric.MType
 		response.Value = val
 	} else {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusNotFound)
 	}
 
 	resp, err := json.Marshal(response)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
