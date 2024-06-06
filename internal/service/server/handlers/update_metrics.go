@@ -42,7 +42,7 @@ func SetMetricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var metric models.Metrics
 	var MetricValue interface{}
-	var response models.MetricsResponse
+	//var response models.MetricsResponse
 
 	if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
 		fmt.Println(err)
@@ -69,14 +69,17 @@ func SetMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if val, err := storage.MS.Get(metric.ID); err == nil {
-		response.ID = metric.ID
-		response.MType = metric.MType
-		response.Value = val
+		switch v := val.(type) {
+		case float64:
+			metric.Value = &v
+		case int64:
+			metric.Delta = &v
+		}
 	} else {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	}
 
-	resp, err := json.Marshal(response)
+	resp, err := json.Marshal(metric)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
