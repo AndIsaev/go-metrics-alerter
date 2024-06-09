@@ -52,7 +52,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	storage.MS.SetMetric(&body)
+	storage.MS.Set(&body)
 
 	w.Header().Set("Content-Type", "application/json")
 

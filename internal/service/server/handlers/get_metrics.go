@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
@@ -17,11 +19,38 @@ func GetMetricHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
 		return
 	}
-	if val, err := storage.MS.Get(MetricName); err != nil {
+	if val, err := storage.MS.GetV1(MetricName); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	} else {
 		w.Write([]byte(fmt.Sprintf("%v", val)))
 	}
+	w.Header().Set("Content-Type", "text/plain")
+
+}
+
+func GetHandler(w http.ResponseWriter, r *http.Request) {
+	var metrics common.Metrics
+
+	err := json.NewDecoder(r.Body).Decode(&metrics)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	e := storage.MS.Get(&metrics)
+	if e != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	resp, err := json.Marshal(metrics)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
 
 }

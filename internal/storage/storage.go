@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"strconv"
 )
 
 type MetricKey string
@@ -80,7 +82,7 @@ func (ms *MemStorage) Ping() error {
 	return nil
 }
 
-func (ms *MemStorage) Get(metricName string) (interface{}, error) {
+func (ms *MemStorage) GetV1(metricName string) (interface{}, error) {
 	if err := ms.Ping(); err != nil {
 		return nil, err
 	}
@@ -93,23 +95,47 @@ func (ms *MemStorage) Get(metricName string) (interface{}, error) {
 	}
 }
 
-func (ms *MemStorage) SetMetric(metric *common.Metrics) {
+func (ms *MemStorage) Set(metric *common.Metrics) {
 	key := MetricKey(metric.ID)
 
 	switch metric.MType {
 	case common.Gauge:
-		ms.Metrics[key] = metric.Value
+		ms.Metrics[key] = *metric.Value
 		return
 	case common.Counter:
 		var result int64
 		if val, ok := ms.Metrics[key].(int64); ok {
 			result = val + *metric.Delta
 			ms.Metrics[key] = result
-			*metric.Delta = result
+			metric.Delta = &result
 			return
 		} else {
 			ms.Metrics[key] = *metric.Delta
 			return
 		}
 	}
+}
+
+func (ms *MemStorage) Get(metric *common.Metrics) error {
+	key := MetricKey(metric.ID)
+
+	switch metric.MType {
+	case common.Gauge:
+		var result float64
+		fmt.Println(ms.Metrics[key])
+		result, err := strconv.ParseFloat(fmt.Sprintf("%v", ms.Metrics[key]), 64)
+		if err != nil {
+			return err
+		}
+
+		metric.Value = &result
+	case common.Counter:
+		var result int64
+		result, err := strconv.ParseInt(fmt.Sprintf("%v", ms.Metrics[key]), 64, 64)
+		if err != nil {
+			return err
+		}
+		metric.Delta = &result
+	}
+	return nil
 }
