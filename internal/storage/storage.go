@@ -52,7 +52,7 @@ func (metric *MetricValue) setValue(metricType string, value interface{}) error 
 }
 
 func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}) error {
-	key := MetricKey(metricName)
+	key := MetricKey(metricType + "-" + metricName)
 
 	newMetricValue := &MetricValue{}
 	if err := newMetricValue.setValue(metricType, metricValue); err != nil {

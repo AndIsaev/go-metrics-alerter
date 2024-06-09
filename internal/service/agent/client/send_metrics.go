@@ -15,7 +15,6 @@ func SendMetricsClient(client *resty.Client, url string, body []byte) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(res)
 
 	if res.StatusCode() != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d", res.StatusCode())

@@ -14,7 +14,7 @@ func TestGetMetricHandler(t *testing.T) {
 	r := chi.NewRouter()
 	r.Mount(`/value/`, GetMetricRouter())
 	// data for test #3
-	storage.MS.Metrics["pollCount"] = 20
+	storage.MS.Metrics["counter-pollCount"] = 20
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
@@ -39,7 +39,7 @@ func TestGetMetricHandler(t *testing.T) {
 				code:     http.StatusNotFound,
 				response: fmt.Sprintf("%v\n", storage.ErrKeyErrorStorage.Error()),
 				address:  "/value/gauge/Alloc",
-				key:      "Alloc",
+				key:      "gauge-Alloc",
 				method:   http.MethodGet,
 			},
 		},
@@ -49,7 +49,7 @@ func TestGetMetricHandler(t *testing.T) {
 				code:     http.StatusBadRequest,
 				response: "An incorrect value is specified for the metric type\n",
 				address:  "/value/error/Alloc",
-				key:      "Alloc",
+				key:      "error-Alloc",
 				method:   http.MethodGet,
 			},
 		},
@@ -59,7 +59,7 @@ func TestGetMetricHandler(t *testing.T) {
 				code:     http.StatusOK,
 				response: "20",
 				address:  "/value/counter/pollCount",
-				key:      "pollCount",
+				key:      "counter-pollCount",
 				method:   http.MethodGet,
 				value:    20,
 			},
