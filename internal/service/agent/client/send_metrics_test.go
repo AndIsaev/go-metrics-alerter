@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -23,6 +24,7 @@ func StartMockServer(t *testing.T, responses map[string][]byte) *httptest.Server
 func TestSendMetricsClient(t *testing.T) {
 	responses := make(map[string][]byte)
 	responses["/update/counter/pollCount/1"] = []byte{}
+	c := resty.New()
 
 	mockServer := StartMockServer(t, responses)
 	defer mockServer.Close()
@@ -45,7 +47,7 @@ func TestSendMetricsClient(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			resp := httptest.NewRecorder()
-			err := SendMetricsClient(tt.want.url, tt.want.contentType, tt.want.body)
+			err := SendMetricsClient(c, tt.want.url, tt.want.body)
 
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want.status, resp.Code)
