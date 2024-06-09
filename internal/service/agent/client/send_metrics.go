@@ -1,18 +1,22 @@
 package client
 
 import (
-	"bytes"
-	"log"
-	"net/http"
+	"fmt"
+	"github.com/go-resty/resty/v2"
 )
 
-func SendMetricsClient(url, contentType string, body []byte) error {
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(body))
+func SendMetricsClient(client *resty.Client, url string, body []byte) error {
+	_, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(body).
+		Post(url)
+
 	if err != nil {
-		log.Fatalf("an Error Occurred %v", err)
-		return nil
+		fmt.Println("+++++++++++++++++++")
+		fmt.Println(err)
+		fmt.Println("+++++++++++++++++++")
+		return err
 	}
 
-	defer resp.Body.Close()
 	return nil
 }

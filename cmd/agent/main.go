@@ -2,16 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
-
-	"fmt"
+	"github.com/go-resty/resty/v2"
 	"time"
 )
 
 func sendReport(reportInterval time.Duration, address string, m metrics.List) error {
 	time.Sleep(reportInterval)
+	c := resty.New()
 
 	for _, v := range m {
 		url := fmt.Sprintf("http://%v/update/", address)
@@ -21,7 +22,7 @@ func sendReport(reportInterval time.Duration, address string, m metrics.List) er
 			return err
 		}
 
-		e := client.SendMetricsClient(url, "application/json", body)
+		e := client.SendMetricsClient(c, url, body)
 		if e != nil {
 			return e
 		}
@@ -34,6 +35,11 @@ func main() {
 
 	newMetrics := metrics.GetMetrics(config.PollInterval)
 	err := sendReport(config.ReportInterval, config.Address, newMetrics)
+
+	fmt.Println("---------------------------------------------------")
+	fmt.Println(err)
+	fmt.Println("---------------------------------------------------")
+
 	if err != nil {
 		panic(err)
 	}

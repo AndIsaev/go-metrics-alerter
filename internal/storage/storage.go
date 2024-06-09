@@ -131,7 +131,7 @@ func (ms *MemStorage) Get(metric *common.Metrics) error {
 		metric.Value = &result
 	case common.Counter:
 		var result int64
-		result, err := strconv.ParseInt(fmt.Sprintf("%v", ms.Metrics[key]), 64, 64)
+		result, err := strconv.ParseInt(fmt.Sprintf("%v", ms.Metrics[key]), 36, 64)
 		if err != nil {
 			return err
 		}
