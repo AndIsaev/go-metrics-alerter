@@ -24,7 +24,7 @@ func NewMemStorage() *MemStorage {
 
 var MS = NewMemStorage()
 
-func (metric *MetricValue) SetValue(metricType string, value interface{}) error {
+func (metric *MetricValue) setValue(metricType string, value interface{}) error {
 	if value == nil {
 		return ErrIncorrectMetricValue
 	}
@@ -53,7 +53,7 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 	key := MetricKey(metricName)
 
 	newMetricValue := &MetricValue{}
-	if err := newMetricValue.SetValue(metricType, metricValue); err != nil {
+	if err := newMetricValue.setValue(metricType, metricValue); err != nil {
 		return ErrIncorrectMetricValue
 	}
 
@@ -90,5 +90,26 @@ func (ms *MemStorage) Get(metricName string) (interface{}, error) {
 		return nil, ErrKeyErrorStorage
 	} else {
 		return val, nil
+	}
+}
+
+func (ms *MemStorage) SetMetric(metric *common.Metrics) {
+	key := MetricKey(metric.ID)
+
+	switch metric.MType {
+	case common.Gauge:
+		ms.Metrics[key] = metric.Value
+		return
+	case common.Counter:
+		var result int64
+		if val, ok := ms.Metrics[key].(int64); ok {
+			result = val + *metric.Delta
+			ms.Metrics[key] = result
+			*metric.Delta = result
+			return
+		} else {
+			ms.Metrics[key] = *metric.Delta
+			return
+		}
 	}
 }

@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 
@@ -31,5 +33,34 @@ func SetMetricHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+}
+
+func UpdateHandler(w http.ResponseWriter, r *http.Request) {
+	var body common.Metrics
+
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// check value is specified for the metric type
+	if !server.IsCorrectType(body.MType) {
+		http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
+		return
+	}
+
+	storage.MS.SetMetric(&body)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	resp, err := json.Marshal(body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
 
 }
