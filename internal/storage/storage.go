@@ -96,33 +96,41 @@ func (ms *MemStorage) GetV1(metricName string) (interface{}, error) {
 }
 
 func (ms *MemStorage) Set(metric *common.Metrics) {
-	key := MetricKey(metric.ID)
+	key := MetricKey(metric.MType + "-" + metric.ID)
 
 	switch metric.MType {
-	case common.Gauge:
-		ms.Metrics[key] = *metric.Value
-		return
 	case common.Counter:
-		var result int64
-		if val, ok := ms.Metrics[key].(int64); ok {
-			result = val + *metric.Delta
+
+		if value, ok := ms.Metrics[key]; !ok {
+			ms.Metrics[key] = *metric.Delta
+		} else {
+			var result int64
+
+			str := fmt.Sprintf("%v", value)
+			v, e := strconv.ParseInt(str, 10, 32)
+			if e != nil {
+				return
+			}
+			result = *metric.Delta + v
+
 			ms.Metrics[key] = result
 			metric.Delta = &result
-			return
-		} else {
-			ms.Metrics[key] = *metric.Delta
-			return
 		}
+	case common.Gauge:
+		ms.Metrics[key] = *metric.Value
 	}
+
 }
 
 func (ms *MemStorage) Get(metric *common.Metrics) error {
-	key := MetricKey(metric.ID)
+	key := MetricKey(metric.MType + "-" + metric.ID)
+	if _, ok := ms.Metrics[key]; !ok {
+		return ErrKeyErrorStorage
+	}
 
 	switch metric.MType {
 	case common.Gauge:
 		var result float64
-		fmt.Println(ms.Metrics[key])
 		result, err := strconv.ParseFloat(fmt.Sprintf("%v", ms.Metrics[key]), 64)
 		if err != nil {
 			return err
@@ -131,7 +139,7 @@ func (ms *MemStorage) Get(metric *common.Metrics) error {
 		metric.Value = &result
 	case common.Counter:
 		var result int64
-		result, err := strconv.ParseInt(fmt.Sprintf("%v", ms.Metrics[key]), 36, 64)
+		result, err := strconv.ParseInt(fmt.Sprintf("%v", ms.Metrics[key]), 10, 64)
 		if err != nil {
 			return err
 		}

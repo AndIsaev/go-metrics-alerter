@@ -40,28 +40,37 @@ func SetMetricHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	var body common.Metrics
 
+	w.Header().Set("Content-Type", "application/json")
+
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// check value is specified for the metric type
 	if !server.IsCorrectType(body.MType) {
-		http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
+		resp := common.Response{
+			Status: http.StatusBadRequest,
+			Text:   "An incorrect value is specified for the metric type",
+		}
+
+		answer, e := json.Marshal(resp)
+		if e != nil {
+			http.Error(w, e.Error(), http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(answer)
+
 		return
 	}
 
 	storage.MS.Set(&body)
 
-	w.Header().Set("Content-Type", "application/json")
-
-	resp, err := json.Marshal(body)
+	result, err := json.Marshal(body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
 
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
 }

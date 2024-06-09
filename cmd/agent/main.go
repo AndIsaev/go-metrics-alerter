@@ -36,10 +36,6 @@ func main() {
 	newMetrics := metrics.GetMetrics(config.PollInterval)
 	err := sendReport(config.ReportInterval, config.Address, newMetrics)
 
-	fmt.Println("---------------------------------------------------")
-	fmt.Println(err)
-	fmt.Println("---------------------------------------------------")
-
 	if err != nil {
 		panic(err)
 	}
