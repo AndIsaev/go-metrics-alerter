@@ -16,10 +16,6 @@ func float64Convert(i float64) *float64 {
 	return &i
 }
 
-func int64Convert(i int64) *int64 {
-	return &i
-}
-
 func GetMetrics(pollInterval time.Duration) List {
 	time.Sleep(pollInterval)
 	pollCount++
@@ -54,8 +50,8 @@ func GetMetrics(pollInterval time.Duration) List {
 		common.Metrics{ID: "Sys", MType: common.Gauge, Value: float64Convert(float64(memStats.Sys))},
 		common.Metrics{ID: "TotalAlloc", MType: common.Gauge, Value: float64Convert(float64(memStats.TotalAlloc))},
 		common.Metrics{ID: "StackInuse", MType: common.Gauge, Value: float64Convert(float64(memStats.StackInuse))},
+		common.Metrics{ID: "RandomValue", MType: common.Gauge, Value: float64Convert(float64(rand.Int()))},
 		common.Metrics{ID: "pollCount", MType: common.Counter, Delta: &pollCount},
-		common.Metrics{ID: "RandomValue", MType: common.Counter, Delta: int64Convert(int64(rand.Int()))},
 	}
 
 	return metrics
