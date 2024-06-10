@@ -21,8 +21,8 @@ func GetMetricRouter() http.Handler {
 	r.Use(middleware.SetHeader("Content-Type", "text/plain"))
 
 	// get value of metric
-	r.Get("/{MetricType}/{MetricName}", GetMetricHandler)
-	r.Post("/", GetHandler)
+	r.Get(`/{MetricType}/{MetricName}`, GetMetricHandler)
+	r.Post(`/`, GetHandler)
 
 	return r
 }
