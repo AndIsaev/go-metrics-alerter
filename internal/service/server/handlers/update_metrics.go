@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
@@ -38,17 +39,26 @@ func SetMetricHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateHandler(w http.ResponseWriter, r *http.Request) {
-	var body common.Metrics
+	//var body common.Metrics
+	metrics := common.Metrics{}
+	buf := new(bytes.Buffer)
+	_, err := buf.ReadFrom(r.Body)
 
-	w.Header().Set("Content-Type", "application/json")
-
-	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
-	if !server.IsCorrectType(body.MType) {
+	err = json.Unmarshal(buf.Bytes(), &metrics)
+	w.Header().Set("Content-Type", "application/json")
+
+	//
+	//err := json.NewDecoder(r.Body).Decode(&body)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+
+	if !server.IsCorrectType(metrics.MType) {
 		resp := common.Response{
 			Status: http.StatusBadRequest,
 			Text:   "An incorrect value is specified for the metric type",
@@ -64,9 +74,9 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	storage.MS.Set(&body)
+	storage.MS.Set(&metrics)
 
-	result, err := json.Marshal(body)
+	result, err := json.Marshal(metrics)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

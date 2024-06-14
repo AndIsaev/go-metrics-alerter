@@ -21,6 +21,7 @@ func run() error {
 
 	r.Use(logger.RequestLogger, logger.ResponseLogger)
 	r.Use(middleware.StripSlashes)
+	r.Use(middleware.Recoverer)
 
 	r.Mount(`/`, handlers.MainPageRouter())
 	r.Mount(`/update`, handlers.UpdateMetricRouter())
