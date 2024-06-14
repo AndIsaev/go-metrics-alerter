@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
@@ -15,14 +14,9 @@ func sendReport(reportInterval time.Duration, address string, m metrics.List) er
 	c := resty.New()
 
 	for _, v := range m {
-		url := fmt.Sprintf("http://%v/update/", address)
-		body, err := json.Marshal(v)
+		url := fmt.Sprintf("http://%v/update", address)
 
-		if err != nil {
-			return err
-		}
-
-		e := client.SendMetricsClient(c, url, body)
+		e := client.SendMetricsClient(c, url, v)
 		if e != nil {
 			return e
 		}

@@ -2,11 +2,12 @@ package client
 
 import (
 	"fmt"
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/go-resty/resty/v2"
 	"net/http"
 )
 
-func SendMetricsClient(client *resty.Client, url string, body []byte) error {
+func SendMetricsClient(client *resty.Client, url string, body common.Metrics) error {
 	res, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(body).

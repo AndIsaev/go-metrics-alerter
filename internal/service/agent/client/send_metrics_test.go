@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -32,7 +33,7 @@ func TestSendMetricsClient(t *testing.T) {
 	type want struct {
 		url         string
 		contentType string
-		body        []byte
+		body        common.Metrics
 		status      int
 		method      string
 	}
@@ -40,7 +41,7 @@ func TestSendMetricsClient(t *testing.T) {
 		name string
 		want want
 	}{
-		{name: "success test #1", want: want{url: mockServer.URL + `/update/counter/pollCount/1`, contentType: "text/plain", body: []byte{}, status: http.StatusOK, method: http.MethodPost}},
+		{name: "success test #1", want: want{url: mockServer.URL + `/update/counter/pollCount/1`, contentType: "text/plain", body: common.Metrics{}, status: http.StatusOK, method: http.MethodPost}},
 	}
 
 	for _, tt := range tests {
