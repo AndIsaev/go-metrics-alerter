@@ -82,17 +82,25 @@ func (ms *MemStorage) Ping() error {
 	return nil
 }
 
-func (ms *MemStorage) GetV1(metricName string) (interface{}, error) {
-	if err := ms.Ping(); err != nil {
-		return nil, err
-	}
-	key := MetricKey(metricName)
+func (ms *MemStorage) GetV1(metric *common.Metrics) error {
+	key := MetricKey(metric.MType + "-" + metric.ID)
+	var result interface{}
 
-	if val, ok := ms.Metrics[key]; !ok {
-		return nil, ErrKeyErrorStorage
+	if value, ok := ms.Metrics[key]; !ok {
+		return ErrKeyErrorStorage
 	} else {
-		return val, nil
+		result = value
 	}
+
+	switch metric.MType {
+	case common.Counter:
+		val, _ := strconv.ParseInt(fmt.Sprintf("%v", result), 10, 64)
+		metric.Delta = &val
+	case common.Gauge:
+		val, _ := strconv.ParseFloat(fmt.Sprintf("%v", result), 64)
+		metric.Value = &val
+	}
+	return nil
 }
 
 func (ms *MemStorage) Set(metric *common.Metrics) {
@@ -107,7 +115,7 @@ func (ms *MemStorage) Set(metric *common.Metrics) {
 			var result int64
 
 			str := fmt.Sprintf("%v", value)
-			v, e := strconv.ParseInt(str, 10, 32)
+			v, e := strconv.ParseInt(str, 10, 64)
 			if e != nil {
 				return
 			}
@@ -122,28 +130,15 @@ func (ms *MemStorage) Set(metric *common.Metrics) {
 
 }
 
-func (ms *MemStorage) Get(metric *common.Metrics) error {
-	key := MetricKey(metric.MType + "-" + metric.ID)
-	if _, ok := ms.Metrics[key]; !ok {
-		return ErrKeyErrorStorage
+func (ms *MemStorage) Get(metricName string) (interface{}, error) {
+	if err := ms.Ping(); err != nil {
+		return nil, err
 	}
+	key := MetricKey(metricName)
 
-	switch metric.MType {
-	case common.Gauge:
-		var result float64
-		result, err := strconv.ParseFloat(fmt.Sprintf("%v", ms.Metrics[key]), 64)
-		if err != nil {
-			return err
-		}
-
-		metric.Value = &result
-	case common.Counter:
-		var result int64
-		result, err := strconv.ParseInt(fmt.Sprintf("%v", ms.Metrics[key]), 10, 64)
-		if err != nil {
-			return err
-		}
-		metric.Delta = &result
+	if val, ok := ms.Metrics[key]; !ok {
+		return nil, ErrKeyErrorStorage
+	} else {
+		return val, nil
 	}
-	return nil
 }

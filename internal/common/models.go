@@ -7,6 +7,25 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
+func (metrics *Metrics) IsValid() bool {
+	if !metrics.IsValidType() {
+		return false
+	}
+	if metrics.MType == Gauge && metrics.Value == nil {
+		return false
+	} else if metrics.MType == Counter && metrics.Delta == nil {
+		return false
+	}
+	return true
+}
+
+func (metrics *Metrics) IsValidType() bool {
+	if metrics.MType != Gauge && metrics.MType != Counter {
+		return false
+	}
+	return true
+}
+
 type Response struct {
 	Text   string `json:"text"`
 	Status int    `json:"status"`

@@ -11,11 +11,10 @@ import (
 
 func sendReport(reportInterval time.Duration, address string, m metrics.List) error {
 	time.Sleep(reportInterval)
+	url := fmt.Sprintf("http://%v/update/", address)
 	c := resty.New()
 
 	for _, v := range m {
-		url := fmt.Sprintf("http://%v/update", address)
-
 		e := client.SendMetricsClient(c, url, v)
 		if e != nil {
 			return e

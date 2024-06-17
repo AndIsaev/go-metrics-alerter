@@ -8,9 +8,12 @@ import (
 )
 
 func SendMetricsClient(client *resty.Client, url string, body common.Metrics) error {
+	var result common.Metrics
+
 	res, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(body).
+		SetResult(&result).
 		Post(url)
 
 	if err != nil {

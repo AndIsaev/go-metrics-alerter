@@ -19,16 +19,14 @@ func GetMetricHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
 		return
 	}
-	if val, err := storage.MS.GetV1(MetricType + "-" + MetricName); err != nil {
+	if val, err := storage.MS.Get(MetricType + "-" + MetricName); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	} else {
 		w.Write([]byte(fmt.Sprintf("%v", val)))
 	}
-	w.Header().Set("Content-Type", "text/plain")
 
 }
-
 func GetHandler(w http.ResponseWriter, r *http.Request) {
 	var metrics common.Metrics
 	w.Header().Set("Content-Type", "application/json")
@@ -38,43 +36,19 @@ func GetHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if !server.IsCorrectType(metrics.MType) {
-		resp := common.Response{
-			Status: http.StatusBadRequest,
-			Text:   "An incorrect value is specified for the metric type",
-		}
-
-		answer, e := json.Marshal(resp)
-		if e != nil {
-			http.Error(w, e.Error(), http.StatusInternalServerError)
-		}
+	if !metrics.IsValidType() {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(answer)
-
 		return
 	}
 
-	e := storage.MS.Get(&metrics)
+	e := storage.MS.GetV1(&metrics)
 	if e != nil {
-		resp := common.Response{
-			Status: http.StatusNotFound,
-			Text:   e.Error(),
-		}
-		answer, ee := json.Marshal(resp)
-		if ee != nil {
-			http.Error(w, ee.Error(), http.StatusInternalServerError)
-		}
-
 		w.WriteHeader(http.StatusNotFound)
-		w.Write(answer)
-		return
 	}
+	fmt.Println(metrics)
 
-	resp, err := json.Marshal(metrics)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	resp, _ := json.Marshal(metrics)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
