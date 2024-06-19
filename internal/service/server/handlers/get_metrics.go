@@ -28,7 +28,7 @@ func GetMetricHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 func GetHandler(w http.ResponseWriter, r *http.Request) {
-	var metrics common.Metrics
+	metrics := common.Metrics{}
 	w.Header().Set("Content-Type", "application/json")
 
 	err := json.NewDecoder(r.Body).Decode(&metrics)
@@ -44,8 +44,8 @@ func GetHandler(w http.ResponseWriter, r *http.Request) {
 	e := storage.MS.GetV1(&metrics)
 	if e != nil {
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
-	fmt.Println(metrics)
 
 	resp, _ := json.Marshal(metrics)
 

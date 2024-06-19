@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
@@ -49,7 +48,6 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if ok := metrics.IsValid(); !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println(ok)
 		return
 	}
 

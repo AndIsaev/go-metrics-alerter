@@ -84,23 +84,21 @@ func (ms *MemStorage) Ping() error {
 
 func (ms *MemStorage) GetV1(metric *common.Metrics) error {
 	key := MetricKey(metric.MType + "-" + metric.ID)
-	var result interface{}
 
-	if value, ok := ms.Metrics[key]; !ok {
-		return ErrKeyErrorStorage
-	} else {
-		result = value
+	if value, ok := ms.Metrics[key]; ok {
+		switch metric.MType {
+		case common.Counter:
+			val, _ := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			metric.Delta = &val
+			return nil
+		case common.Gauge:
+			val, _ := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
+			metric.Value = &val
+			return nil
+		}
 	}
 
-	switch metric.MType {
-	case common.Counter:
-		val, _ := strconv.ParseInt(fmt.Sprintf("%v", result), 10, 64)
-		metric.Delta = &val
-	case common.Gauge:
-		val, _ := strconv.ParseFloat(fmt.Sprintf("%v", result), 64)
-		metric.Value = &val
-	}
-	return nil
+	return ErrKeyErrorStorage
 }
 
 func (ms *MemStorage) Set(metric *common.Metrics) {
@@ -118,7 +116,7 @@ func (ms *MemStorage) Set(metric *common.Metrics) {
 			}
 
 			ms.Metrics[key] = *metric.Delta + v
-			*metric.Delta = *metric.Delta + v
+			*metric.Delta += v
 		}
 	case common.Gauge:
 		ms.Metrics[key] = *metric.Value
