@@ -112,17 +112,13 @@ func (ms *MemStorage) Set(metric *common.Metrics) {
 		if value, ok := ms.Metrics[key]; !ok {
 			ms.Metrics[key] = *metric.Delta
 		} else {
-			var result int64
-
-			str := fmt.Sprintf("%v", value)
-			v, e := strconv.ParseInt(str, 10, 64)
+			v, e := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
 			if e != nil {
 				return
 			}
-			result = *metric.Delta + v
 
-			ms.Metrics[key] = result
-			metric.Delta = &result
+			ms.Metrics[key] = *metric.Delta + v
+			*metric.Delta = *metric.Delta + v
 		}
 	case common.Gauge:
 		ms.Metrics[key] = *metric.Value
