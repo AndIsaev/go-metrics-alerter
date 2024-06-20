@@ -41,13 +41,13 @@ func GetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e := storage.MS.GetV1(&metrics)
+	val, e := storage.MS.GetV1(metrics.MType, metrics.ID)
 	if e != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	resp, _ := json.Marshal(metrics)
+	resp, _ := json.Marshal(val)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
