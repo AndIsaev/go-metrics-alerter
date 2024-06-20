@@ -51,7 +51,7 @@ func GetMetrics(pollInterval time.Duration) List {
 		common.Metrics{ID: "TotalAlloc", MType: common.Gauge, Value: float64Convert(float64(memStats.TotalAlloc))},
 		common.Metrics{ID: "StackInuse", MType: common.Gauge, Value: float64Convert(float64(memStats.StackInuse))},
 		common.Metrics{ID: "RandomValue", MType: common.Gauge, Value: float64Convert(float64(rand.Int()))},
-		common.Metrics{ID: "pollCount", MType: common.Counter, Delta: &pollCount},
+		common.Metrics{ID: "PollCount", MType: common.Counter, Delta: &pollCount},
 	}
 
 	return metrics

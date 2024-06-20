@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -11,8 +10,7 @@ import (
 )
 
 func TestGetMetricHandler(t *testing.T) {
-	r := chi.NewRouter()
-	r.Mount(`/`, ServerRouter())
+	r := ServerRouter()
 	storage.MS.Metrics["counter-pollCount"] = 20
 
 	ts := httptest.NewServer(r)
