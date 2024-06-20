@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 
@@ -12,8 +11,7 @@ import (
 )
 
 func TestUpdateMetricHandler(t *testing.T) {
-	r := chi.NewRouter()
-	r.Mount(`/update/`, UpdateMetricRouter())
+	r := ServerRouter()
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
@@ -96,15 +94,14 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 	// clear storage before tests
 	ClearStorage()
 
-	r := chi.NewRouter()
-	r.Mount(`/update/`, UpdateMetricRouter())
+	r := ServerRouter()
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
 	type want struct {
 		code        int
-		response    string
+		response    interface{}
 		contentType string
 		address     string
 		key         storage.MetricKey
@@ -135,7 +132,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 				address:  "/update/counter/pollCount",
 				key:      "pollCount",
 				method:   http.MethodPost,
-				response: "404 page not found\n",
+				response: "{\"message\":\"route does not exist\"}",
 			},
 		},
 		{
@@ -154,7 +151,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 				code:     http.StatusMethodNotAllowed,
 				address:  "/update/counter/pollCount/1",
 				key:      "pollCount",
-				response: "",
+				response: "{\"message\":\"method is not valid\"}",
 				method:   http.MethodPut,
 			},
 		},
@@ -164,7 +161,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 				code:     http.StatusMethodNotAllowed,
 				address:  "/update/counter/pollCount/1",
 				key:      "pollCount",
-				response: "",
+				response: "{\"message\":\"method is not valid\"}",
 				method:   http.MethodPatch,
 			},
 		},

@@ -12,8 +12,7 @@ import (
 
 func TestGetMetricHandler(t *testing.T) {
 	r := chi.NewRouter()
-	r.Mount(`/value/`, GetMetricRouter())
-	// data for test #3
+	r.Mount(`/`, ServerRouter())
 	storage.MS.Metrics["counter-pollCount"] = 20
 
 	ts := httptest.NewServer(r)

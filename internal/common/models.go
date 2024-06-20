@@ -27,6 +27,5 @@ func (metrics *Metrics) IsValidType() bool {
 }
 
 type Response struct {
-	Text   string `json:"text"`
-	Status int    `json:"status"`
+	Message string `json:"message"`
 }

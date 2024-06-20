@@ -2,6 +2,8 @@ package service
 
 import (
 	"flag"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
+	"github.com/go-chi/chi"
 	"os"
 	"strconv"
 	"time"
@@ -9,10 +11,12 @@ import (
 
 type ServerConfig struct {
 	Address string `env:"ADDRESS"`
+	Route   chi.Router
 }
 
 func NewServerConfig() *ServerConfig {
 	cfg := &ServerConfig{}
+	cfg.Route = handlers.ServerRouter()
 
 	flag.StringVar(&cfg.Address, "a", "0.0.0.0:8080", "server address")
 
