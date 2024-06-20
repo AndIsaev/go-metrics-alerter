@@ -21,7 +21,6 @@ func ServerRouter() chi.Router {
 		body := common.Response{Message: "route does not exist"}
 		response, _ := json.Marshal(body)
 		w.Write(response)
-		return
 	})
 
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +28,6 @@ func ServerRouter() chi.Router {
 		body := common.Response{Message: "method is not valid"}
 		response, _ := json.Marshal(body)
 		w.Write(response)
-		return
 	})
 
 	// Routes
