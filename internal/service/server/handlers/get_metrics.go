@@ -10,47 +10,51 @@ import (
 	"net/http"
 )
 
-func GetMetricHandler(w http.ResponseWriter, r *http.Request) {
-	MetricType := chi.URLParam(r, "MetricType")
-	MetricName := chi.URLParam(r, "MetricName")
+func GetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		MetricType := chi.URLParam(r, "MetricType")
+		MetricName := chi.URLParam(r, "MetricName")
 
-	// check value is specified for the metric type
-	if !server.IsCorrectType(MetricType) {
-		http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
-		return
+		// check value is specified for the metric type
+		if !server.IsCorrectType(MetricType) {
+			http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
+			return
+		}
+		if val, err := mem.Get(MetricType + "-" + MetricName); err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		} else {
+			w.Write([]byte(fmt.Sprintf("%v", val)))
+		}
 	}
-	if val, err := storage.MS.Get(MetricType + "-" + MetricName); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	} else {
-		w.Write([]byte(fmt.Sprintf("%v", val)))
-	}
-
 }
-func GetHandler(w http.ResponseWriter, r *http.Request) {
-	metrics := common.Metrics{}
-	w.Header().Set("Content-Type", "application/json")
 
-	err := json.NewDecoder(r.Body).Decode(&metrics)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+func GetHandler(mem *storage.MemStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		metrics := common.Metrics{}
+		w.Header().Set("Content-Type", "application/json")
+
+		err := json.NewDecoder(r.Body).Decode(&metrics)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if !metrics.IsValidType() {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		val, e := mem.GetV1(metrics.MType, metrics.ID)
+		if e != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		resp, _ := json.Marshal(val)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
+
 	}
-	if !metrics.IsValidType() {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	val, e := storage.MS.GetV1(metrics.MType, metrics.ID)
-	if e != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	resp, _ := json.Marshal(val)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
-
 }

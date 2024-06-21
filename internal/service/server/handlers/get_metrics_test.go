@@ -10,8 +10,9 @@ import (
 )
 
 func TestGetMetricHandler(t *testing.T) {
-	r := ServerRouter()
-	storage.MS.Metrics["counter-pollCount"] = 20
+	MS := storage.NewMemStorage()
+	r := ServerRouter(MS)
+	MS.Metrics["counter-pollCount"] = 20
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
@@ -70,7 +71,7 @@ func TestGetMetricHandler(t *testing.T) {
 			defer resp.Body.Close()
 
 			if tt.name != "test #3 - case with counter type" {
-				assert.Nil(t, storage.MS.Metrics[tt.want.key])
+				assert.Nil(t, MS.Metrics[tt.want.key])
 			}
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)

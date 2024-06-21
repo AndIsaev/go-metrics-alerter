@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"net/http"
 )
 
-func ServerRouter() chi.Router {
+func ServerRouter(memory *storage.MemStorage) chi.Router {
 	r := chi.NewRouter()
 	r.Use(logger.RequestLogger, logger.ResponseLogger)
 	r.Use(middleware.StripSlashes)
@@ -34,15 +35,15 @@ func ServerRouter() chi.Router {
 
 	r.Group(func(r chi.Router) {
 		// update
-		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, SetMetricHandler)
-		r.Post(`/update`, UpdateHandler)
+		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, SetMetricHandler(memory))
+		r.Post(`/update`, UpdateHandler(memory))
 
 		// value
-		r.Get(`/value/{MetricType}/{MetricName}`, GetMetricHandler)
-		r.Post(`/value`, GetHandler)
+		r.Get(`/value/{MetricType}/{MetricName}`, GetMetricHandler(memory))
+		r.Post(`/value`, GetHandler(memory))
 
 		// main page
-		r.Get(`/`, MainPageHandler)
+		r.Get(`/`, MainPageHandler(memory))
 	})
 
 	return r

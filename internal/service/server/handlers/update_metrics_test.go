@@ -11,10 +11,10 @@ import (
 )
 
 func TestUpdateMetricHandler(t *testing.T) {
-	r := ServerRouter()
+	MS := storage.NewMemStorage()
+	r := ServerRouter(MS)
 
 	ts := httptest.NewServer(r)
-	defer ts.Close()
 
 	type want struct {
 		code        int
@@ -75,15 +75,15 @@ func TestUpdateMetricHandler(t *testing.T) {
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.response, body)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
-			assert.NotNil(t, storage.MS.Metrics[tt.want.key])
+			assert.NotNil(t, MS.Metrics[tt.want.key])
 
 			switch tt.name {
 			case "success test #1":
-				assert.Equal(t, storage.MS.Metrics[tt.want.key], tt.want.value)
+				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value)
 			case "success test #2":
-				assert.Equal(t, storage.MS.Metrics[tt.want.key], tt.want.value.(int64))
+				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value.(int64))
 			case "success test #3":
-				assert.Equal(t, storage.MS.Metrics[tt.want.key], tt.want.value.(int64)*2)
+				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value.(int64)*2)
 			}
 
 		})
@@ -91,13 +91,10 @@ func TestUpdateMetricHandler(t *testing.T) {
 }
 
 func TestUpdateMetricHandlerError(t *testing.T) {
-	// clear storage before tests
-	ClearStorage()
-
-	r := ServerRouter()
+	MS := storage.NewMemStorage()
+	r := ServerRouter(MS)
 
 	ts := httptest.NewServer(r)
-	defer ts.Close()
 
 	type want struct {
 		code        int
@@ -176,7 +173,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.response, body)
 			assert.Error(t, storage.ErrIncorrectMetricValue)
-			assert.Nil(t, storage.MS.Metrics[tt.want.key])
+			assert.Nil(t, MS.Metrics[tt.want.key])
 
 			switch tt.name {
 			case "unsuccessful test #1":

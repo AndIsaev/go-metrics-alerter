@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -21,10 +20,4 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.
 	require.NoError(t, err)
 
 	return resp, string(respBody)
-}
-
-func ClearStorage() {
-	for key := range storage.MS.Metrics {
-		delete(storage.MS.Metrics, key)
-	}
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"flag"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
 	"os"
 	"strconv"
@@ -10,13 +11,15 @@ import (
 )
 
 type ServerConfig struct {
-	Address string `env:"ADDRESS"`
-	Route   chi.Router
+	Address    string `env:"ADDRESS"`
+	Route      chi.Router
+	MemStorage *storage.MemStorage
 }
 
 func NewServerConfig() *ServerConfig {
 	cfg := &ServerConfig{}
-	cfg.Route = handlers.ServerRouter()
+	cfg.MemStorage = storage.NewMemStorage()
+	cfg.Route = handlers.ServerRouter(cfg.MemStorage)
 
 	flag.StringVar(&cfg.Address, "a", "0.0.0.0:8080", "server address")
 
