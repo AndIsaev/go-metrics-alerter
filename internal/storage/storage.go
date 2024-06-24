@@ -14,17 +14,15 @@ type MetricValue struct {
 }
 
 type MemStorage struct {
-	Metrics map[MetricKey]interface{}
+	Metrics map[string]interface{}
 }
 
 // NewMemStorage - return new var of MemStorage
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
-		Metrics: make(map[MetricKey]interface{}),
+		Metrics: make(map[string]interface{}),
 	}
 }
-
-var MS = NewMemStorage()
 
 func (metric *MetricValue) setValue(metricType string, value interface{}) error {
 	if value == nil {
@@ -52,7 +50,6 @@ func (metric *MetricValue) setValue(metricType string, value interface{}) error 
 }
 
 func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}) error {
-	key := MetricKey(metricType + "-" + metricName)
 
 	newMetricValue := &MetricValue{}
 	if err := newMetricValue.setValue(metricType, metricValue); err != nil {
@@ -61,14 +58,14 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 
 	switch metricType {
 	case common.Gauge:
-		ms.Metrics[key] = newMetricValue.FloatValue
+		ms.Metrics[metricName] = newMetricValue.FloatValue
 		return nil
 	case common.Counter:
-		if val, ok := ms.Metrics[key].(int64); ok {
-			ms.Metrics[key] = val + newMetricValue.IntValue
+		if val, ok := ms.Metrics[metricName].(int64); ok {
+			ms.Metrics[metricName] = val + newMetricValue.IntValue
 			return nil
 		} else {
-			ms.Metrics[key] = metricValue
+			ms.Metrics[metricName] = metricValue
 			return nil
 		}
 	}
@@ -83,10 +80,9 @@ func (ms *MemStorage) Ping() error {
 }
 
 func (ms *MemStorage) GetV1(MType, ID string) (common.Metrics, error) {
-	key := MetricKey(MType + "-" + ID)
 	metric := common.Metrics{ID: ID, MType: MType}
 
-	if value, ok := ms.Metrics[key]; ok {
+	if value, ok := ms.Metrics[ID]; ok {
 		switch MType {
 		case common.Counter:
 			val, _ := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
@@ -103,35 +99,29 @@ func (ms *MemStorage) GetV1(MType, ID string) (common.Metrics, error) {
 }
 
 func (ms *MemStorage) Set(metric *common.Metrics) {
-	key := MetricKey(metric.MType + "-" + metric.ID)
 
 	switch metric.MType {
 	case common.Counter:
 
-		if value, ok := ms.Metrics[key]; !ok {
-			ms.Metrics[key] = *metric.Delta
+		if value, ok := ms.Metrics[metric.ID]; !ok {
+			ms.Metrics[metric.ID] = *metric.Delta
 		} else {
 			v, e := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
 			if e != nil {
 				return
 			}
 
-			ms.Metrics[key] = *metric.Delta + v
+			ms.Metrics[metric.ID] = *metric.Delta + v
 			*metric.Delta += v
 		}
 	case common.Gauge:
-		ms.Metrics[key] = *metric.Value
+		ms.Metrics[metric.ID] = *metric.Value
 	}
 
 }
 
 func (ms *MemStorage) Get(metricName string) (interface{}, error) {
-	if err := ms.Ping(); err != nil {
-		return nil, err
-	}
-	key := MetricKey(metricName)
-
-	if val, ok := ms.Metrics[key]; !ok {
+	if val, ok := ms.Metrics[metricName]; !ok {
 		return nil, ErrKeyErrorStorage
 	} else {
 		return val, nil

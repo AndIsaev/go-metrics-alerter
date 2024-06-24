@@ -22,7 +22,7 @@ func TestGetMetricHandler(t *testing.T) {
 		response    string
 		contentType string
 		address     string
-		key         storage.MetricKey
+		key         string
 		value       interface{}
 		method      string
 	}
@@ -37,7 +37,7 @@ func TestGetMetricHandler(t *testing.T) {
 				code:     http.StatusNotFound,
 				response: fmt.Sprintf("%v\n", storage.ErrKeyErrorStorage.Error()),
 				address:  "/value/gauge/Alloc",
-				key:      "gauge-Alloc",
+				key:      "Alloc",
 				method:   http.MethodGet,
 			},
 		},
@@ -47,7 +47,7 @@ func TestGetMetricHandler(t *testing.T) {
 				code:     http.StatusBadRequest,
 				response: "An incorrect value is specified for the metric type\n",
 				address:  "/value/error/Alloc",
-				key:      "error-Alloc",
+				key:      "Alloc",
 				method:   http.MethodGet,
 			},
 		},
@@ -57,7 +57,7 @@ func TestGetMetricHandler(t *testing.T) {
 				code:     http.StatusOK,
 				response: "20",
 				address:  "/value/counter/pollCount",
-				key:      "counter-pollCount",
+				key:      "pollCount",
 				method:   http.MethodGet,
 				value:    20,
 			},

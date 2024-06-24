@@ -21,7 +21,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 		response    string
 		contentType string
 		address     string
-		key         storage.MetricKey
+		key         string
 		value       interface{}
 		method      string
 	}
@@ -37,7 +37,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 				response:    ``,
 				contentType: "text/plain",
 				address:     "/update/gauge/Alloc/20.4",
-				key:         "gauge-Alloc",
+				key:         "Alloc",
 				value:       20.4,
 				method:      http.MethodPost,
 			},
@@ -49,7 +49,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 				response:    ``,
 				contentType: "text/plain",
 				address:     "/update/counter/pollCount/1",
-				key:         "counter-pollCount",
+				key:         "pollCount",
 				value:       int64(1),
 				method:      http.MethodPost,
 			},
@@ -61,7 +61,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 				response:    ``,
 				contentType: "text/plain",
 				address:     "/update/counter/pollCount/1",
-				key:         "counter-pollCount",
+				key:         "pollCount",
 				value:       int64(1),
 				method:      http.MethodPost,
 			},
@@ -101,7 +101,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 		response    interface{}
 		contentType string
 		address     string
-		key         storage.MetricKey
+		key         string
 		value       interface{}
 		method      string
 	}

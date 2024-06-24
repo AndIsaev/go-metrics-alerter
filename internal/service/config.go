@@ -2,6 +2,7 @@ package service
 
 import (
 	"flag"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
@@ -35,10 +36,11 @@ type AgentConfig struct {
 	Address        string        `env:"ADDRESS"`
 	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
 	PollInterval   time.Duration `env:"POLL_INTERVAL"`
+	StorageMetrics *metrics.StorageMetrics
 }
 
 func NewAgentConfig() *AgentConfig {
-	cfg := &AgentConfig{}
+	cfg := &AgentConfig{StorageMetrics: metrics.NewListMetrics()}
 	var pollIntervalSeconds uint64
 	var reportIntervalSeconds uint64
 
