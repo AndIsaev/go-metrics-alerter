@@ -12,7 +12,7 @@ import (
 func TestGetMetricHandler(t *testing.T) {
 	MS := storage.NewMemStorage()
 	r := ServerRouter(MS)
-	MS.Metrics["counter-pollCount"] = 20
+	MS.Metrics["pollCount"] = 20
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
