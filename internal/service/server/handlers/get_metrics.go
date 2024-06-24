@@ -20,7 +20,7 @@ func GetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
 			http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
 			return
 		}
-		if val, err := mem.Get(MetricType + "-" + MetricName); err != nil {
+		if val, err := mem.Get(MetricName); err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		} else {
