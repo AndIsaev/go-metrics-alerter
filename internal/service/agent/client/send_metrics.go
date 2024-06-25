@@ -1,18 +1,28 @@
 package client
 
 import (
-	"bytes"
-	"log"
+	"fmt"
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"github.com/go-resty/resty/v2"
 	"net/http"
 )
 
-func SendMetricsClient(url, contentType string, body []byte) error {
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(body))
+func SendMetricsClient(client *resty.Client, url string, body common.Metrics) error {
+	var result common.Metrics
+
+	res, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(body).
+		SetResult(&result).
+		Post(url)
+
 	if err != nil {
-		log.Fatalf("an Error Occurred %v", err)
-		return nil
+		return err
 	}
 
-	defer resp.Body.Close()
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", res.StatusCode())
+	}
+
 	return nil
 }

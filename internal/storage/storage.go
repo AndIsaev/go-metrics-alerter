@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"strconv"
 )
 
 type MetricKey string
@@ -12,19 +14,17 @@ type MetricValue struct {
 }
 
 type MemStorage struct {
-	Metrics map[MetricKey]interface{}
+	Metrics map[string]interface{}
 }
 
 // NewMemStorage - return new var of MemStorage
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
-		Metrics: make(map[MetricKey]interface{}),
+		Metrics: make(map[string]interface{}),
 	}
 }
 
-var MS = NewMemStorage()
-
-func (metric *MetricValue) SetValue(metricType string, value interface{}) error {
+func (metric *MetricValue) setValue(metricType string, value interface{}) error {
 	if value == nil {
 		return ErrIncorrectMetricValue
 	}
@@ -50,23 +50,22 @@ func (metric *MetricValue) SetValue(metricType string, value interface{}) error 
 }
 
 func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}) error {
-	key := MetricKey(metricName)
 
 	newMetricValue := &MetricValue{}
-	if err := newMetricValue.SetValue(metricType, metricValue); err != nil {
+	if err := newMetricValue.setValue(metricType, metricValue); err != nil {
 		return ErrIncorrectMetricValue
 	}
 
 	switch metricType {
 	case common.Gauge:
-		ms.Metrics[key] = newMetricValue.FloatValue
+		ms.Metrics[metricName] = newMetricValue.FloatValue
 		return nil
 	case common.Counter:
-		if val, ok := ms.Metrics[key].(int64); ok {
-			ms.Metrics[key] = val + newMetricValue.IntValue
+		if val, ok := ms.Metrics[metricName].(int64); ok {
+			ms.Metrics[metricName] = val + newMetricValue.IntValue
 			return nil
 		} else {
-			ms.Metrics[key] = metricValue
+			ms.Metrics[metricName] = metricValue
 			return nil
 		}
 	}
@@ -80,13 +79,49 @@ func (ms *MemStorage) Ping() error {
 	return nil
 }
 
-func (ms *MemStorage) Get(metricName string) (interface{}, error) {
-	if err := ms.Ping(); err != nil {
-		return nil, err
-	}
-	key := MetricKey(metricName)
+func (ms *MemStorage) GetV1(MType, ID string) (common.Metrics, error) {
+	metric := common.Metrics{ID: ID, MType: MType}
 
-	if val, ok := ms.Metrics[key]; !ok {
+	if value, ok := ms.Metrics[ID]; ok {
+		switch MType {
+		case common.Counter:
+			val, _ := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			metric.Delta = &val
+			return metric, nil
+		case common.Gauge:
+			val, _ := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
+			metric.Value = &val
+			return metric, nil
+		}
+	}
+
+	return metric, ErrKeyErrorStorage
+}
+
+func (ms *MemStorage) Set(metric *common.Metrics) {
+
+	switch metric.MType {
+	case common.Counter:
+
+		if value, ok := ms.Metrics[metric.ID]; !ok {
+			ms.Metrics[metric.ID] = *metric.Delta
+		} else {
+			v, e := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			if e != nil {
+				return
+			}
+
+			ms.Metrics[metric.ID] = *metric.Delta + v
+			*metric.Delta += v
+		}
+	case common.Gauge:
+		ms.Metrics[metric.ID] = *metric.Value
+	}
+
+}
+
+func (ms *MemStorage) Get(metricName string) (interface{}, error) {
+	if val, ok := ms.Metrics[metricName]; !ok {
 		return nil, ErrKeyErrorStorage
 	} else {
 		return val, nil

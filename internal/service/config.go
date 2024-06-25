@@ -2,19 +2,27 @@ package service
 
 import (
 	"flag"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
+	"github.com/go-chi/chi"
 	"os"
 	"strconv"
 	"time"
 )
 
 type ServerConfig struct {
-	Address string `env:"ADDRESS"`
+	Address    string `env:"ADDRESS"`
+	Route      chi.Router
+	MemStorage *storage.MemStorage
 }
 
 func NewServerConfig() *ServerConfig {
 	cfg := &ServerConfig{}
+	cfg.MemStorage = storage.NewMemStorage()
+	cfg.Route = handlers.ServerRouter(cfg.MemStorage)
 
-	flag.StringVar(&cfg.Address, "a", "0.0.0.0:8080", "server address")
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "server address")
 
 	flag.Parse()
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
@@ -28,14 +36,15 @@ type AgentConfig struct {
 	Address        string        `env:"ADDRESS"`
 	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
 	PollInterval   time.Duration `env:"POLL_INTERVAL"`
+	StorageMetrics *metrics.StorageMetrics
 }
 
 func NewAgentConfig() *AgentConfig {
-	cfg := &AgentConfig{}
+	cfg := &AgentConfig{StorageMetrics: metrics.NewListMetrics()}
 	var pollIntervalSeconds uint64
 	var reportIntervalSeconds uint64
 
-	flag.StringVar(&cfg.Address, "a", "0.0.0.0:8080", "address")
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "address")
 	flag.Uint64Var(&reportIntervalSeconds, "r", 10, "seconds of report interval")
 	flag.Uint64Var(&pollIntervalSeconds, "p", 2, "seconds of poll interval")
 

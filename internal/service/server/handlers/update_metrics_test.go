@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 
@@ -12,18 +11,17 @@ import (
 )
 
 func TestUpdateMetricHandler(t *testing.T) {
-	r := chi.NewRouter()
-	r.Mount(`/update/`, UpdateMetricRouter())
+	MS := storage.NewMemStorage()
+	r := ServerRouter(MS)
 
 	ts := httptest.NewServer(r)
-	defer ts.Close()
 
 	type want struct {
 		code        int
 		response    string
 		contentType string
 		address     string
-		key         storage.MetricKey
+		key         string
 		value       interface{}
 		method      string
 	}
@@ -39,8 +37,9 @@ func TestUpdateMetricHandler(t *testing.T) {
 				response:    ``,
 				contentType: "text/plain",
 				address:     "/update/gauge/Alloc/20.4",
-				key:         "Alloc", value: 20.4,
-				method: http.MethodPost,
+				key:         "Alloc",
+				value:       20.4,
+				method:      http.MethodPost,
 			},
 		},
 		{
@@ -76,15 +75,15 @@ func TestUpdateMetricHandler(t *testing.T) {
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.response, body)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
-			assert.NotNil(t, storage.MS.Metrics[tt.want.key])
+			assert.NotNil(t, MS.Metrics[tt.want.key])
 
 			switch tt.name {
 			case "success test #1":
-				assert.Equal(t, storage.MS.Metrics[tt.want.key], tt.want.value)
+				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value)
 			case "success test #2":
-				assert.Equal(t, storage.MS.Metrics[tt.want.key], tt.want.value.(int64))
+				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value.(int64))
 			case "success test #3":
-				assert.Equal(t, storage.MS.Metrics[tt.want.key], tt.want.value.(int64)*2)
+				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value.(int64)*2)
 			}
 
 		})
@@ -92,21 +91,17 @@ func TestUpdateMetricHandler(t *testing.T) {
 }
 
 func TestUpdateMetricHandlerError(t *testing.T) {
-	// clear storage before tests
-	ClearStorage()
-
-	r := chi.NewRouter()
-	r.Mount(`/update/`, UpdateMetricRouter())
+	MS := storage.NewMemStorage()
+	r := ServerRouter(MS)
 
 	ts := httptest.NewServer(r)
-	defer ts.Close()
 
 	type want struct {
 		code        int
-		response    string
+		response    interface{}
 		contentType string
 		address     string
-		key         storage.MetricKey
+		key         string
 		value       interface{}
 		method      string
 	}
@@ -134,7 +129,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 				address:  "/update/counter/pollCount",
 				key:      "pollCount",
 				method:   http.MethodPost,
-				response: "404 page not found\n",
+				response: "{\"message\":\"route does not exist\"}",
 			},
 		},
 		{
@@ -153,7 +148,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 				code:     http.StatusMethodNotAllowed,
 				address:  "/update/counter/pollCount/1",
 				key:      "pollCount",
-				response: "",
+				response: "{\"message\":\"method is not valid\"}",
 				method:   http.MethodPut,
 			},
 		},
@@ -163,7 +158,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 				code:     http.StatusMethodNotAllowed,
 				address:  "/update/counter/pollCount/1",
 				key:      "pollCount",
-				response: "",
+				response: "{\"message\":\"method is not valid\"}",
 				method:   http.MethodPatch,
 			},
 		},
@@ -178,7 +173,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.response, body)
 			assert.Error(t, storage.ErrIncorrectMetricValue)
-			assert.Nil(t, storage.MS.Metrics[tt.want.key])
+			assert.Nil(t, MS.Metrics[tt.want.key])
 
 			switch tt.name {
 			case "unsuccessful test #1":
