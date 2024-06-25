@@ -7,14 +7,11 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 	"github.com/go-resty/resty/v2"
-	"sync"
 	"time"
 )
 
-func runPullReport(metrics *metrics.StorageMetrics, interval *time.Ticker) {
-	for range interval.C {
-		metrics.Pull()
-	}
+func runPullReport(metrics *metrics.StorageMetrics) {
+	metrics.Pull()
 }
 
 func runSendReport(address string, metrics *metrics.StorageMetrics) error {
@@ -32,22 +29,22 @@ func runSendReport(address string, metrics *metrics.StorageMetrics) error {
 }
 
 func main() {
-	var wg sync.WaitGroup
-	wg.Add(2)
-
 	config := service.NewAgentConfig()
-	pollInterval := time.NewTicker(config.PollInterval)
-	reportInterval := time.NewTicker(config.ReportInterval)
+	fmt.Println("Start Agent")
+	for {
+		fmt.Println("Pull Metrics")
 
-	go runPullReport(config.StorageMetrics, pollInterval)
-	go func() {
-		for range reportInterval.C {
-			err := runSendReport(config.Address, config.StorageMetrics)
-			if err != nil {
-				panic(err)
-			}
+		runPullReport(config.StorageMetrics)
+
+		time.Sleep(config.PollInterval)
+
+		fmt.Println("Send Metrics to Server")
+
+		if err := runSendReport(config.Address, config.StorageMetrics); err != nil {
+			continue
 		}
-	}()
-	wg.Wait()
 
+		time.Sleep(config.ReportInterval)
+
+	}
 }

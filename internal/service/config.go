@@ -22,7 +22,7 @@ func NewServerConfig() *ServerConfig {
 	cfg.MemStorage = storage.NewMemStorage()
 	cfg.Route = handlers.ServerRouter(cfg.MemStorage)
 
-	flag.StringVar(&cfg.Address, "a", "0.0.0.0:8080", "server address")
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "server address")
 
 	flag.Parse()
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
@@ -44,7 +44,7 @@ func NewAgentConfig() *AgentConfig {
 	var pollIntervalSeconds uint64
 	var reportIntervalSeconds uint64
 
-	flag.StringVar(&cfg.Address, "a", "0.0.0.0:8080", "address")
+	flag.StringVar(&cfg.Address, "a", "localhost:8080", "address")
 	flag.Uint64Var(&reportIntervalSeconds, "r", 10, "seconds of report interval")
 	flag.Uint64Var(&pollIntervalSeconds, "p", 2, "seconds of poll interval")
 
