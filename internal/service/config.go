@@ -39,11 +39,11 @@ type AgentConfig struct {
 	PollInterval        time.Duration `env:"POLL_INTERVAL"`
 	StorageMetrics      *metrics.StorageMetrics
 	UpdateMetricAddress string
-	ProtocolHttp        string
+	ProtocolHTTP        string
 }
 
 func NewAgentConfig() *AgentConfig {
-	cfg := &AgentConfig{StorageMetrics: metrics.NewListMetrics(), ProtocolHttp: "http"}
+	cfg := &AgentConfig{StorageMetrics: metrics.NewListMetrics(), ProtocolHTTP: "http"}
 	var pollIntervalSeconds uint64
 	var reportIntervalSeconds uint64
 
@@ -73,7 +73,7 @@ func NewAgentConfig() *AgentConfig {
 		cfg.PollInterval = time.Duration(pollIntervalSeconds) * time.Second
 	}
 	// set address for update metric
-	cfg.UpdateMetricAddress = fmt.Sprintf("%s://%s/update/", cfg.ProtocolHttp, cfg.Address)
+	cfg.UpdateMetricAddress = fmt.Sprintf("%s://%s/update/", cfg.ProtocolHTTP, cfg.Address)
 
 	return cfg
 }
