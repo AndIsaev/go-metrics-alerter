@@ -1,35 +1,53 @@
 package handlers
 
 import (
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
+	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/mailru/easyjson"
 	"net/http"
 )
 
-func UpdateMetricRouter() http.Handler {
+func ServerRouter(memory *storage.MemStorage) chi.Router {
 	r := chi.NewRouter()
-	r.Use(middleware.SetHeader("Content-Type", "text/plain"))
+	r.Use(logger.RequestLogger, logger.ResponseLogger)
+	r.Use(middleware.StripSlashes)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.SetHeader("Content-Type", "application/json"))
 
-	// set value for metric
-	r.Post("/{MetricType}/{MetricName}/{MetricValue}", SetMetricHandler)
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		body := common.Response{Message: "route does not exist"}
+		response, _ := easyjson.Marshal(body)
+		w.Write(response)
+	})
 
-	return r
-}
+	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		body := common.Response{Message: "method is not valid"}
+		response, _ := easyjson.Marshal(body)
+		w.Write(response)
+	})
 
-func GetMetricRouter() http.Handler {
-	r := chi.NewRouter()
-	r.Use(middleware.SetHeader("Content-Type", "text/plain"))
+	// Routes
 
-	// get value of metric
-	r.Get("/{MetricType}/{MetricName}", GetMetricHandler)
+	r.Group(func(r chi.Router) {
+		r.Use(mid.GzipMiddleware)
 
-	return r
-}
+		// update
+		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, SetMetricHandler(memory))
+		r.Post(`/update`, UpdateHandler(memory))
 
-func MainPageRouter() http.Handler {
-	r := chi.NewRouter()
+		// value
+		r.Get(`/value/{MetricType}/{MetricName}`, GetMetricHandler(memory))
+		r.Post(`/value`, GetHandler(memory))
 
-	r.Get("/", MainPageHandler)
+		// main page
+		r.Get(`/`, MainPageHandler(memory))
+	})
 
 	return r
 }
