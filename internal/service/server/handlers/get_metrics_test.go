@@ -68,6 +68,7 @@ func TestGetMetricHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			resp, _ := testRequest(t, ts, tt.want.method, tt.want.address)
+			resp.Body.Close()
 
 			if tt.name != "test #3 - case with counter type" {
 				assert.Nil(t, MS.Metrics[tt.want.key])

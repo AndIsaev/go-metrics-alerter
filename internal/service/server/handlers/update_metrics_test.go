@@ -70,6 +70,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, _ := testRequest(t, ts, tt.want.method, tt.want.address)
+			resp.Body.Close()
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			//assert.Equal(t, tt.want.response, body)
@@ -157,6 +158,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, tt.want.method, tt.want.address)
+			resp.Body.Close()
 
 			// создаём новый Recorder
 			assert.Equal(t, tt.want.code, resp.StatusCode)
