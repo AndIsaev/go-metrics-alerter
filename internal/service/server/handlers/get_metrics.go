@@ -7,6 +7,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
+	"github.com/mailru/easyjson"
 	"net/http"
 )
 
@@ -50,7 +51,7 @@ func GetHandler(mem *storage.MemStorage) http.HandlerFunc {
 			return
 		}
 
-		resp, _ := json.Marshal(val)
+		resp, _ := easyjson.Marshal(val)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

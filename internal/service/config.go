@@ -2,6 +2,7 @@ package service
 
 import (
 	"flag"
+	"fmt"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
@@ -33,14 +34,16 @@ func NewServerConfig() *ServerConfig {
 }
 
 type AgentConfig struct {
-	Address        string        `env:"ADDRESS"`
-	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
-	PollInterval   time.Duration `env:"POLL_INTERVAL"`
-	StorageMetrics *metrics.StorageMetrics
+	Address             string        `env:"ADDRESS"`
+	ReportInterval      time.Duration `env:"REPORT_INTERVAL"`
+	PollInterval        time.Duration `env:"POLL_INTERVAL"`
+	StorageMetrics      *metrics.StorageMetrics
+	UpdateMetricAddress string
+	ProtocolHttp        string
 }
 
 func NewAgentConfig() *AgentConfig {
-	cfg := &AgentConfig{StorageMetrics: metrics.NewListMetrics()}
+	cfg := &AgentConfig{StorageMetrics: metrics.NewListMetrics(), ProtocolHttp: "http"}
 	var pollIntervalSeconds uint64
 	var reportIntervalSeconds uint64
 
@@ -69,6 +72,8 @@ func NewAgentConfig() *AgentConfig {
 	} else {
 		cfg.PollInterval = time.Duration(pollIntervalSeconds) * time.Second
 	}
+	// set address for update metric
+	cfg.UpdateMetricAddress = fmt.Sprintf("%s://%s/update/", cfg.ProtocolHttp, cfg.Address)
 
 	return cfg
 }

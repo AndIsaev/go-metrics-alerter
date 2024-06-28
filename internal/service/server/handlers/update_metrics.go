@@ -6,6 +6,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
+	"github.com/mailru/easyjson"
 
 	"net/http"
 )
@@ -54,7 +55,7 @@ func UpdateHandler(mem *storage.MemStorage) http.HandlerFunc {
 
 		mem.Set(&metrics)
 
-		result, _ := json.Marshal(metrics)
+		result, _ := easyjson.Marshal(metrics)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write(result)

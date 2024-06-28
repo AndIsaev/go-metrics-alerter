@@ -6,6 +6,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
 	"github.com/go-resty/resty/v2"
 	"time"
 )
@@ -14,9 +15,9 @@ func runPullReport(metrics *metrics.StorageMetrics) {
 	metrics.Pull()
 }
 
-func runSendReport(address string, metrics *metrics.StorageMetrics) error {
-	url := fmt.Sprintf("http://%s/update/", address)
+func runSendReport(url string, metrics *metrics.StorageMetrics) error {
 	c := resty.New()
+	c.OnBeforeRequest(middleware.GzipRequestMiddleware)
 
 	for _, v := range metrics.Metrics {
 		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: &v.Value, Delta: &v.Delta}
@@ -40,7 +41,7 @@ func main() {
 
 		fmt.Println("Send Metrics to Server")
 
-		if err := runSendReport(config.Address, config.StorageMetrics); err != nil {
+		if err := runSendReport(config.UpdateMetricAddress, config.StorageMetrics); err != nil {
 			continue
 		}
 
