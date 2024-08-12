@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -11,7 +12,8 @@ import (
 
 func TestGetMetricHandler(t *testing.T) {
 	MS := storage.NewMemStorage()
-	r := ServerRouter(MS)
+	fileManager, _ := file.NewProducer("./test_metrics")
+	r := ServerRouter(MS, fileManager)
 	MS.Metrics["pollCount"] = 20
 
 	ts := httptest.NewServer(r)
