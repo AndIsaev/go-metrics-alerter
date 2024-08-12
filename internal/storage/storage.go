@@ -72,13 +72,6 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 	return ErrIncorrectMetricValue
 }
 
-func (ms *MemStorage) Ping() error {
-	if err := ms.Metrics; err == nil {
-		return ErrNotInitializedStorage
-	}
-	return nil
-}
-
 func (ms *MemStorage) GetV1(MType, ID string) (common.Metrics, error) {
 	metric := common.Metrics{ID: ID, MType: MType}
 
