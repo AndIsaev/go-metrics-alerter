@@ -3,6 +3,7 @@ package service
 import (
 	"flag"
 	"fmt"
+	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
@@ -13,9 +14,11 @@ import (
 )
 
 type ServerConfig struct {
-	Address    string `env:"ADDRESS"`
-	Route      chi.Router
-	MemStorage *storage.MemStorage
+	Address      string `env:"ADDRESS"`
+	Route        chi.Router
+	MemStorage   *storage.MemStorage
+	FileProducer *file.Producer
+	FileConsumer *file.Consumer
 
 	StoreInterval   time.Duration `env:"STORE_INTERVAL"`
 	FileStoragePath string        `env:"FILE_STORAGE_PATH"`
@@ -28,12 +31,10 @@ func NewServerConfig() *ServerConfig {
 	var fileStoragePath string
 
 	cfg.MemStorage = storage.NewMemStorage()
-	cfg.Route = handlers.ServerRouter(cfg.MemStorage)
 
 	flag.StringVar(&cfg.Address, "a", "localhost:8080", "server address")
-
 	flag.BoolVar(&cfg.Restore, "r", true, "Load metrics from file")
-	flag.StringVar(&fileStoragePath, "f", "metrics", "path of metrics on disk")
+	flag.StringVar(&fileStoragePath, "f", "./metrics", "path of metrics on disk")
 	flag.Uint64Var(&storeInterval, "i", 300, "interval for save metrics on file")
 
 	flag.Parse()
@@ -55,6 +56,22 @@ func NewServerConfig() *ServerConfig {
 		}
 	} else {
 		cfg.StoreInterval = time.Duration(storeInterval) * time.Second
+	}
+
+	// set producer and consumer for file manager
+	producer, _ := file.NewProducer(cfg.FileStoragePath)
+	consumer, _ := file.NewConsumer(cfg.FileStoragePath)
+
+	cfg.FileProducer = producer
+	cfg.FileConsumer = consumer
+
+	// set main server router
+	cfg.Route = handlers.ServerRouter(cfg.MemStorage, cfg.FileProducer)
+
+	// download metrics from disc to storage
+	if cfg.Restore {
+		downloadMetrics(cfg.FileConsumer, cfg.MemStorage)
+		defer cfg.FileConsumer.Close()
 	}
 
 	return cfg
@@ -114,4 +131,17 @@ func createDir(fileStoragePath string) {
 		dir := fmt.Sprintf("Directory %s already exists", fileStoragePath)
 		fmt.Println(dir)
 	}
+}
+
+func downloadMetrics(consumer *file.Consumer, memStorage *storage.MemStorage) {
+
+	fmt.Println("Read metrics from disk")
+	for {
+		m, err := consumer.ReadMetrics()
+		if err != nil {
+			break
+		}
+		memStorage.Set(m)
+	}
+	fmt.Println("Metrics downloaded")
 }

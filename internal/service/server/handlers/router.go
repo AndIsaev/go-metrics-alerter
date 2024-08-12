@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
+	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
@@ -11,7 +12,7 @@ import (
 	"net/http"
 )
 
-func ServerRouter(memory *storage.MemStorage) chi.Router {
+func ServerRouter(memory *storage.MemStorage, fileProducer *file.Producer) chi.Router {
 	r := chi.NewRouter()
 	r.Use(logger.RequestLogger, logger.ResponseLogger)
 	r.Use(middleware.StripSlashes)
@@ -39,7 +40,7 @@ func ServerRouter(memory *storage.MemStorage) chi.Router {
 
 		// update
 		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, SetMetricHandler(memory))
-		r.Post(`/update`, UpdateHandler(memory))
+		r.Post(`/update`, UpdateHandler(memory, fileProducer))
 
 		// value
 		r.Get(`/value/{MetricType}/{MetricName}`, GetMetricHandler(memory))

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
@@ -38,7 +39,8 @@ func SetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
 	}
 }
 
-func UpdateHandler(mem *storage.MemStorage) http.HandlerFunc {
+// UpdateHandler - saving metrics from agent
+func UpdateHandler(mem *storage.MemStorage, producer *file.Producer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metrics := common.Metrics{}
 		w.Header().Set("Content-Type", "application/json")
@@ -53,6 +55,14 @@ func UpdateHandler(mem *storage.MemStorage) http.HandlerFunc {
 			return
 		}
 
+		// save metrics to file
+		e := server.SaveMetricsOnFile(producer, metrics)
+		if e != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// save new metrics to DB
 		mem.Set(&metrics)
 
 		result, _ := easyjson.Marshal(metrics)
