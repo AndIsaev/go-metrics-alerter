@@ -72,7 +72,7 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 	return ErrIncorrectMetricValue
 }
 
-func (ms *MemStorage) GetV1(MType, ID string) (common.Metrics, error) {
+func (ms *MemStorage) GetMetric(MType, ID string) (common.Metrics, error) {
 	metric := common.Metrics{ID: ID, MType: MType}
 
 	if value, ok := ms.Metrics[ID]; ok {
@@ -113,7 +113,7 @@ func (ms *MemStorage) Set(metric *common.Metrics) {
 
 }
 
-func (ms *MemStorage) Get(metricName string) (interface{}, error) {
+func (ms *MemStorage) GetMetricByName(metricName string) (interface{}, error) {
 	if val, ok := ms.Metrics[metricName]; !ok {
 		return nil, ErrKeyErrorStorage
 	} else {
