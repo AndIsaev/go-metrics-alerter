@@ -1,18 +1,19 @@
 package handlers
 
 import (
+	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 
-	//"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 func TestUpdateMetricHandler(t *testing.T) {
 	MS := storage.NewMemStorage()
-	r := ServerRouter(MS)
+	fileManager, _ := file.NewProducer("./test_metrics")
+	r := ServerRouter(MS, fileManager)
 
 	ts := httptest.NewServer(r)
 
@@ -92,7 +93,8 @@ func TestUpdateMetricHandler(t *testing.T) {
 
 func TestUpdateMetricHandlerError(t *testing.T) {
 	MS := storage.NewMemStorage()
-	r := ServerRouter(MS)
+	fileManager, _ := file.NewProducer("./test_metrics")
+	r := ServerRouter(MS, fileManager)
 
 	ts := httptest.NewServer(r)
 
