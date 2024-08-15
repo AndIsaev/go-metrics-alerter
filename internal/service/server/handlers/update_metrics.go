@@ -24,12 +24,13 @@ func SetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
 			return
 		}
 
-		if val, err := server.DefineMetricValue(MetricType, chi.URLParam(r, "MetricValue")); err != nil {
+		val, err := server.DefineMetricValue(MetricType, chi.URLParam(r, "MetricValue"))
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
-		} else {
-			MetricValue = val
 		}
+
+		MetricValue = val
 
 		if err := mem.Add(MetricType, MetricName, MetricValue); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -56,8 +57,7 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer) http.Handle
 		}
 
 		// save metrics to file
-		e := server.SaveMetricsOnFile(producer, metrics)
-		if e != nil {
+		if err := server.SaveMetricsOnFile(producer, metrics); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

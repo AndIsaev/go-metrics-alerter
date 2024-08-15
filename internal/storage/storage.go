@@ -34,16 +34,12 @@ func (metric *MetricValue) setValue(metricType string, value interface{}) error 
 		if metricType == common.Counter {
 			metric.IntValue = v
 			return nil
-		} else {
-			return ErrIncorrectMetricValue
 		}
 
 	case float64:
 		if metricType == common.Gauge {
 			metric.FloatValue = v
 			return nil
-		} else {
-			return ErrIncorrectMetricValue
 		}
 	}
 	return ErrIncorrectMetricValue
@@ -61,13 +57,13 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 		ms.Metrics[metricName] = newMetricValue.FloatValue
 		return nil
 	case common.Counter:
-		if val, ok := ms.Metrics[metricName].(int64); ok {
+		val, ok := ms.Metrics[metricName].(int64)
+		if ok {
 			ms.Metrics[metricName] = val + newMetricValue.IntValue
 			return nil
-		} else {
-			ms.Metrics[metricName] = metricValue
-			return nil
 		}
+		ms.Metrics[metricName] = metricValue
+		return nil
 	}
 	return ErrIncorrectMetricValue
 }
@@ -114,9 +110,9 @@ func (ms *MemStorage) Set(metric *common.Metrics) {
 }
 
 func (ms *MemStorage) GetMetricByName(metricName string) (interface{}, error) {
-	if val, ok := ms.Metrics[metricName]; !ok {
+	val, ok := ms.Metrics[metricName]
+	if !ok {
 		return nil, ErrKeyErrorStorage
-	} else {
-		return val, nil
 	}
+	return val, nil
 }
