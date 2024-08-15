@@ -19,14 +19,14 @@ func ServerRouter(memory *storage.MemStorage, fileProducer *file.Producer) chi.R
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.SetHeader("Content-Type", "application/json"))
 
-	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		body := common.Response{Message: "route does not exist"}
 		response, _ := easyjson.Marshal(body)
 		w.Write(response)
 	})
 
-	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+	r.MethodNotAllowed(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		body := common.Response{Message: "method is not valid"}
 		response, _ := easyjson.Marshal(body)
