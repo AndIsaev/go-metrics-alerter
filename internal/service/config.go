@@ -8,6 +8,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/go-chi/chi"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -43,11 +44,14 @@ func NewServerConfig() *ServerConfig {
 	}
 
 	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {
-		createDir(envFileStoragePath)
 		cfg.FileStoragePath = envFileStoragePath
 	} else {
-		createDir(fileStoragePath)
 		cfg.FileStoragePath = fileStoragePath
+	}
+
+	// create directory
+	if err := createDir(cfg.FileStoragePath); err != nil {
+		log.Fatal(err)
 	}
 
 	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
@@ -122,15 +126,15 @@ func NewAgentConfig() *AgentConfig {
 	return cfg
 }
 
-func createDir(fileStoragePath string) {
+func createDir(fileStoragePath string) error {
 	if _, err := os.Stat(fileStoragePath); os.IsNotExist(err) {
-		os.Mkdir(fileStoragePath, 0755)
-		dir := fmt.Sprintf("Directory %s created", fileStoragePath)
-		fmt.Println(dir)
-	} else {
-		dir := fmt.Sprintf("Directory %s already exists", fileStoragePath)
-		fmt.Println(dir)
+		if err = os.Mkdir(fileStoragePath, 0755); err != nil {
+			fmt.Printf("the directory %s not created\n", fileStoragePath)
+			return err
+		}
 	}
+	fmt.Printf("the directory %s is done\n", fileStoragePath)
+	return nil
 }
 
 func downloadMetrics(consumer *file.Consumer, memStorage *storage.MemStorage) {
