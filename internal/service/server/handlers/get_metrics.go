@@ -21,12 +21,13 @@ func GetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
 			http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
 			return
 		}
-		if val, err := mem.GetMetricByName(MetricName); err != nil {
+
+		val, err := mem.GetMetricByName(MetricName)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
-		} else {
-			w.Write([]byte(fmt.Sprintf("%v", val)))
 		}
+		w.Write([]byte(fmt.Sprintf("%v", val)))
 	}
 }
 
@@ -35,8 +36,7 @@ func GetHandler(mem *storage.MemStorage) http.HandlerFunc {
 		metrics := common.Metrics{}
 		w.Header().Set("Content-Type", "application/json")
 
-		err := json.NewDecoder(r.Body).Decode(&metrics)
-		if err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -45,8 +45,8 @@ func GetHandler(mem *storage.MemStorage) http.HandlerFunc {
 			return
 		}
 
-		val, e := mem.GetMetric(metrics.MType, metrics.ID)
-		if e != nil {
+		val, err := mem.GetMetric(metrics.MType, metrics.ID)
+		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
