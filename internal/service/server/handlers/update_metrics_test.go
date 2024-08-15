@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"net/http"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/stretchr/testify/assert"
-	"net/http"
 
 	"net/http/httptest"
 	"testing"
@@ -86,7 +88,6 @@ func TestUpdateMetricHandler(t *testing.T) {
 			case "success test #3":
 				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value.(int64)*2)
 			}
-
 		})
 	}
 }
@@ -99,13 +100,12 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 	ts := httptest.NewServer(r)
 
 	type want struct {
-		code        int
-		response    string
-		contentType string
-		address     string
-		key         string
-		method      string
-		json        bool
+		code     int
+		response string
+		address  string
+		key      string
+		method   string
+		json     bool
 	}
 
 	tests := []struct {
@@ -157,7 +157,6 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, tt.want.method, tt.want.address)
 			resp.Body.Close()

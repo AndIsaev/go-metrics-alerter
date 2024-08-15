@@ -3,15 +3,17 @@ package service
 import (
 	"flag"
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/go-chi/chi"
 	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/go-chi/chi"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
 type ServerConfig struct {
@@ -138,7 +140,6 @@ func createDir(fileStoragePath string) error {
 }
 
 func downloadMetrics(consumer *file.Consumer, memStorage *storage.MemStorage) {
-
 	fmt.Println("Read metrics from disk")
 	for {
 		m, err := consumer.ReadMetrics()

@@ -74,7 +74,6 @@ func (r *loggingResponseWriter) Done() {
 // ResponseLogger — middleware-логер ответов HTTP-запросов.
 func ResponseLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		responseData := &responseData{
 			status: 0,
 			size:   0,

@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/go-resty/resty/v2"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
-	"github.com/go-resty/resty/v2"
-	"time"
 )
 
 func runPullReport(metrics *metrics.StorageMetrics) {
@@ -46,6 +48,5 @@ func main() {
 		}
 
 		time.Sleep(config.ReportInterval)
-
 	}
 }

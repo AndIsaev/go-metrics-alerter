@@ -3,16 +3,16 @@ package server
 import (
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
-	"strconv"
 )
 
 // IsCorrectType - check correct type for Metrics
 func IsCorrectType(MetricType string) bool {
 	for _, v := range []string{common.Counter, common.Gauge} {
 		if v == MetricType {
-
 			return true
 		}
 	}

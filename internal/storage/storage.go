@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"strconv"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 type MetricKey string
@@ -46,7 +47,6 @@ func (metric *MetricValue) setValue(metricType string, value interface{}) error 
 }
 
 func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}) error {
-
 	newMetricValue := &MetricValue{}
 	if err := newMetricValue.setValue(metricType, metricValue); err != nil {
 		return ErrIncorrectMetricValue
@@ -88,7 +88,6 @@ func (ms *MemStorage) GetMetric(MType, ID string) (common.Metrics, error) {
 }
 
 func (ms *MemStorage) Set(metric *common.Metrics) {
-
 	switch metric.MType {
 	case common.Counter:
 
@@ -106,7 +105,6 @@ func (ms *MemStorage) Set(metric *common.Metrics) {
 	case common.Gauge:
 		ms.Metrics[metric.ID] = *metric.Value
 	}
-
 }
 
 func (ms *MemStorage) GetMetricByName(metricName string) (interface{}, error) {

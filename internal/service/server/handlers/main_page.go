@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"net/http"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
 func MainPageHandler(mem *storage.MemStorage) http.HandlerFunc {

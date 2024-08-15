@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
 func TestGetMetricHandler(t *testing.T) {
@@ -20,13 +22,12 @@ func TestGetMetricHandler(t *testing.T) {
 	defer ts.Close()
 
 	type want struct {
-		code        int
-		response    string
-		contentType string
-		address     string
-		key         string
-		value       interface{}
-		method      string
+		code     int
+		response string
+		address  string
+		key      string
+		value    interface{}
+		method   string
 	}
 
 	tests := []struct {
@@ -68,7 +69,6 @@ func TestGetMetricHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			resp, _ := testRequest(t, ts, tt.want.method, tt.want.address)
 			resp.Body.Close()
 
@@ -78,7 +78,6 @@ func TestGetMetricHandler(t *testing.T) {
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			//assert.Equal(t, tt.want.response, body)
-
 		})
 	}
 }

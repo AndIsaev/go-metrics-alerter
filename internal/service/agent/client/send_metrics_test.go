@@ -1,12 +1,14 @@
 package client
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 func StartMockServer(t *testing.T, responses map[string][]byte) *httptest.Server {
@@ -46,7 +48,6 @@ func TestSendMetricsClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			resp := httptest.NewRecorder()
 			err := SendMetricsClient(c, tt.want.url, tt.want.body)
 

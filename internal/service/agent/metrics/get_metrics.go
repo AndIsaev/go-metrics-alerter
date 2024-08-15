@@ -1,9 +1,10 @@
 package metrics
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"math/rand"
 	"runtime"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 var memStats runtime.MemStats
@@ -25,7 +26,6 @@ func NewListMetrics() *StorageMetrics {
 }
 
 func (listMetrics *StorageMetrics) Pull() {
-
 	pollCount++
 	runtime.ReadMemStats(&memStats)
 
@@ -58,5 +58,4 @@ func (listMetrics *StorageMetrics) Pull() {
 	listMetrics.Metrics["MCacheSys"] = StorageMetric{ID: "MCacheSys", MType: common.Gauge, Value: float64(memStats.MCacheSys)}
 	listMetrics.Metrics["RandomValue"] = StorageMetric{ID: "RandomValue", MType: common.Gauge, Value: float64(rand.Int())}
 	listMetrics.Metrics["PollCount"] = StorageMetric{ID: "PollCount", MType: common.Counter, Delta: pollCount}
-
 }

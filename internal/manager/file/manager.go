@@ -3,8 +3,9 @@ package file
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"os"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 type Producer struct {

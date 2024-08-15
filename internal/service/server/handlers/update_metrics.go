@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+
+	"github.com/go-chi/chi"
+	"github.com/mailru/easyjson"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/go-chi/chi"
-	"github.com/mailru/easyjson"
 
 	"net/http"
 )

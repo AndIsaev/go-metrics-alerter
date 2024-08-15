@@ -2,9 +2,11 @@ package client
 
 import (
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/go-resty/resty/v2"
 	"net/http"
+
+	"github.com/go-resty/resty/v2"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 func SendMetricsClient(client *resty.Client, url string, body common.Metrics) error {

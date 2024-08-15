@@ -3,12 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"github.com/go-chi/chi"
+	"github.com/mailru/easyjson"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/go-chi/chi"
-	"github.com/mailru/easyjson"
-	"net/http"
 )
 
 func GetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
@@ -51,11 +53,10 @@ func GetHandler(mem *storage.MemStorage) http.HandlerFunc {
 			return
 		}
 
-		resp, _ := easyjson.Marshal(val)
+		response, _ := easyjson.Marshal(val)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(resp)
-
+		w.Write(response)
 	}
 }
