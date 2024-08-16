@@ -22,7 +22,7 @@ func runSendReport(url string, metrics *metrics.StorageMetrics) error {
 	c.OnBeforeRequest(middleware.GzipRequestMiddleware)
 
 	for _, v := range metrics.Metrics {
-		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: &v.Value, Delta: &v.Delta}
+		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: v.Value, Delta: v.Delta}
 		e := client.SendMetricsClient(c, url, metric)
 		if e != nil {
 			return e
