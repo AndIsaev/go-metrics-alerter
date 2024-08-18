@@ -1,22 +1,31 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/go-resty/resty/v2"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
-
-	"fmt"
-	"time"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
 )
 
-func sendReport(reportInterval time.Duration, address string, m metrics.Metrics) error {
-	time.Sleep(reportInterval)
+func runPullReport(metrics *metrics.StorageMetrics) {
+	metrics.Pull()
+}
 
-	for _, v := range m {
-		url := fmt.Sprintf("http://%v/update/%v/%v/%v", address, v.MetricType, v.Name, v.Value)
-		err := client.SendMetricsClient(url, "text/plain", []byte{})
-		if err != nil {
-			return err
+func runSendReport(url string, metrics *metrics.StorageMetrics) error {
+	c := resty.New()
+	c.OnBeforeRequest(middleware.GzipRequestMiddleware)
+
+	for _, v := range metrics.Metrics {
+		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: v.Value, Delta: v.Delta}
+		e := client.SendMetricsClient(c, url, metric)
+		if e != nil {
+			return e
 		}
 	}
 	return nil
@@ -24,10 +33,20 @@ func sendReport(reportInterval time.Duration, address string, m metrics.Metrics)
 
 func main() {
 	config := service.NewAgentConfig()
+	fmt.Println("Start Agent")
+	for {
+		fmt.Println("Pull Metrics")
 
-	newMetrics := metrics.GetMetrics(config.PollInterval)
-	err := sendReport(config.ReportInterval, config.Address, newMetrics)
-	if err != nil {
-		panic(err)
+		runPullReport(config.StorageMetrics)
+
+		time.Sleep(config.PollInterval)
+
+		fmt.Println("Send Metrics to Server")
+
+		if err := runSendReport(config.UpdateMetricAddress, config.StorageMetrics); err != nil {
+			continue
+		}
+
+		time.Sleep(config.ReportInterval)
 	}
 }

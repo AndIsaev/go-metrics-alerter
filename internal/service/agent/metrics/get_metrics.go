@@ -1,58 +1,65 @@
 package metrics
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"math/rand"
 	"runtime"
-	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 var memStats runtime.MemStats
-var pollCount int
+var pollCount int64
 
-type Metrics []struct {
-	Name       string
-	Value      interface{}
-	MetricType string
+type StorageMetric struct {
+	ID    string
+	MType string
+	Value *float64
+	Delta *int64
 }
 
-func GetMetrics(pollInterval time.Duration) Metrics {
-	time.Sleep(pollInterval)
-	pollCount++
+type StorageMetrics struct {
+	Metrics map[string]StorageMetric
+}
 
+func NewListMetrics() *StorageMetrics {
+	return &StorageMetrics{make(map[string]StorageMetric)}
+}
+
+func getAddress(f float64) *float64 {
+	return &f
+}
+
+func (listMetrics *StorageMetrics) Pull() {
+	pollCount++
 	runtime.ReadMemStats(&memStats)
 
-	metrics := Metrics{
-		{Name: "Alloc", Value: memStats.Alloc, MetricType: common.Gauge},
-		{Name: "BuckHashSys", Value: memStats.BuckHashSys, MetricType: common.Gauge},
-		{Name: "Frees", Value: memStats.Frees, MetricType: common.Gauge},
-		{Name: "GCCPUFraction", Value: memStats.GCCPUFraction, MetricType: common.Gauge},
-		{Name: "GCSys", Value: memStats.GCSys, MetricType: common.Gauge},
-		{Name: "HeapAlloc", Value: memStats.HeapAlloc, MetricType: common.Gauge},
-		{Name: "HeapIdle", Value: memStats.HeapIdle, MetricType: common.Gauge},
-		{Name: "HeapInuse", Value: memStats.HeapInuse, MetricType: common.Gauge},
-		{Name: "HeapObjects", Value: memStats.HeapObjects, MetricType: common.Gauge},
-		{Name: "HeapReleased", Value: memStats.HeapReleased, MetricType: common.Gauge},
-		{Name: "HeapSys", Value: memStats.HeapSys, MetricType: common.Gauge},
-		{Name: "LastGC", Value: memStats.LastGC, MetricType: common.Gauge},
-		{Name: "Lookups", Value: memStats.Lookups, MetricType: common.Gauge},
-		{Name: "MCacheInuse", Value: memStats.MCacheInuse, MetricType: common.Gauge},
-		{Name: "MCacheSys", Value: memStats.MCacheSys, MetricType: common.Gauge},
-		{Name: "MSpanInuse", Value: memStats.MSpanInuse, MetricType: common.Gauge},
-		{Name: "MSpanSys", Value: memStats.MSpanSys, MetricType: common.Gauge},
-		{Name: "Mallocs", Value: memStats.Mallocs, MetricType: common.Gauge},
-		{Name: "NextGC", Value: memStats.NextGC, MetricType: common.Gauge},
-		{Name: "NumForcedGC", Value: memStats.NumForcedGC, MetricType: common.Gauge},
-		{Name: "NumGC", Value: memStats.NumGC, MetricType: common.Gauge},
-		{Name: "OtherSys", Value: memStats.OtherSys, MetricType: common.Gauge},
-		{Name: "PauseTotalNs", Value: memStats.PauseTotalNs, MetricType: common.Gauge},
-		{Name: "StackInuse", Value: memStats.StackInuse, MetricType: common.Gauge},
-		{Name: "StackSys", Value: memStats.StackSys, MetricType: common.Gauge},
-		{Name: "Sys", Value: memStats.Sys, MetricType: common.Gauge},
-		{Name: "TotalAlloc", Value: memStats.TotalAlloc, MetricType: common.Gauge},
-		{Name: "pollCount", Value: pollCount, MetricType: common.Counter},
-		{Name: "RandomValue", Value: rand.Int(), MetricType: common.Counter},
-	}
-
-	return metrics
+	listMetrics.Metrics["Alloc"] = StorageMetric{ID: "Alloc", MType: common.Gauge, Value: getAddress(float64(memStats.Alloc))}
+	listMetrics.Metrics["BuckHashSys"] = StorageMetric{ID: "BuckHashSys", MType: common.Gauge, Value: getAddress(float64(memStats.BuckHashSys))}
+	listMetrics.Metrics["Frees"] = StorageMetric{ID: "Frees", MType: common.Gauge, Value: getAddress(float64(memStats.Frees))}
+	listMetrics.Metrics["GCCPUFraction"] = StorageMetric{ID: "GCCPUFraction", MType: common.Gauge, Value: &memStats.GCCPUFraction}
+	listMetrics.Metrics["GCSys"] = StorageMetric{ID: "GCSys", MType: common.Gauge, Value: getAddress(float64(memStats.GCSys))}
+	listMetrics.Metrics["HeapAlloc"] = StorageMetric{ID: "HeapAlloc", MType: common.Gauge, Value: getAddress(float64(memStats.HeapAlloc))}
+	listMetrics.Metrics["HeapIdle"] = StorageMetric{ID: "HeapIdle", MType: common.Gauge, Value: getAddress(float64(memStats.HeapIdle))}
+	listMetrics.Metrics["HeapInuse"] = StorageMetric{ID: "HeapInuse", MType: common.Gauge, Value: getAddress(float64(memStats.HeapInuse))}
+	listMetrics.Metrics["HeapObjects"] = StorageMetric{ID: "HeapObjects", MType: common.Gauge, Value: getAddress(float64(memStats.HeapObjects))}
+	listMetrics.Metrics["HeapReleased"] = StorageMetric{ID: "HeapReleased", MType: common.Gauge, Value: getAddress(float64(memStats.HeapReleased))}
+	listMetrics.Metrics["HeapSys"] = StorageMetric{ID: "HeapSys", MType: common.Gauge, Value: getAddress(float64(memStats.HeapSys))}
+	listMetrics.Metrics["LastGC"] = StorageMetric{ID: "LastGC", MType: common.Gauge, Value: getAddress(float64(memStats.LastGC))}
+	listMetrics.Metrics["Lookups"] = StorageMetric{ID: "Lookups", MType: common.Gauge, Value: getAddress(float64(memStats.Lookups))}
+	listMetrics.Metrics["MCacheInuse"] = StorageMetric{ID: "MCacheInuse", MType: common.Gauge, Value: getAddress(float64(memStats.MCacheInuse))}
+	listMetrics.Metrics["MSpanInuse"] = StorageMetric{ID: "MSpanInuse", MType: common.Gauge, Value: getAddress(float64(memStats.MSpanInuse))}
+	listMetrics.Metrics["MSpanSys"] = StorageMetric{ID: "MSpanSys", MType: common.Gauge, Value: getAddress(float64(memStats.MSpanSys))}
+	listMetrics.Metrics["Mallocs"] = StorageMetric{ID: "Mallocs", MType: common.Gauge, Value: getAddress(float64(memStats.Mallocs))}
+	listMetrics.Metrics["NextGC"] = StorageMetric{ID: "NextGC", MType: common.Gauge, Value: getAddress(float64(memStats.NextGC))}
+	listMetrics.Metrics["NumForcedGC"] = StorageMetric{ID: "NumForcedGC", MType: common.Gauge, Value: getAddress(float64(memStats.NumForcedGC))}
+	listMetrics.Metrics["NumGC"] = StorageMetric{ID: "NumGC", MType: common.Gauge, Value: getAddress(float64(memStats.NumGC))}
+	listMetrics.Metrics["OtherSys"] = StorageMetric{ID: "OtherSys", MType: common.Gauge, Value: getAddress(float64(memStats.OtherSys))}
+	listMetrics.Metrics["PauseTotalNs"] = StorageMetric{ID: "PauseTotalNs", MType: common.Gauge, Value: getAddress(float64(memStats.PauseTotalNs))}
+	listMetrics.Metrics["StackInuse"] = StorageMetric{ID: "StackInuse", MType: common.Gauge, Value: getAddress(float64(memStats.StackInuse))}
+	listMetrics.Metrics["StackSys"] = StorageMetric{ID: "StackSys", MType: common.Gauge, Value: getAddress(float64(memStats.StackSys))}
+	listMetrics.Metrics["Sys"] = StorageMetric{ID: "Sys", MType: common.Gauge, Value: getAddress(float64(memStats.Sys))}
+	listMetrics.Metrics["TotalAlloc"] = StorageMetric{ID: "TotalAlloc", MType: common.Gauge, Value: getAddress(float64(memStats.TotalAlloc))}
+	listMetrics.Metrics["MCacheSys"] = StorageMetric{ID: "MCacheSys", MType: common.Gauge, Value: getAddress(float64(memStats.MCacheSys))}
+	listMetrics.Metrics["RandomValue"] = StorageMetric{ID: "RandomValue", MType: common.Gauge, Value: getAddress(float64(rand.Int()))}
+	listMetrics.Metrics["PollCount"] = StorageMetric{ID: "PollCount", MType: common.Counter, Delta: &pollCount}
 }

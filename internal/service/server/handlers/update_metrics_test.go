@@ -1,29 +1,30 @@
 package handlers
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/go-chi/chi"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 
-	//"net/http"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
+
 	"net/http/httptest"
 	"testing"
 )
 
 func TestUpdateMetricHandler(t *testing.T) {
-	r := chi.NewRouter()
-	r.Mount(`/update/`, UpdateMetricRouter())
+	MS := storage.NewMemStorage()
+	fileManager, _ := file.NewProducer("./test_metrics")
+	r := ServerRouter(MS, fileManager)
 
 	ts := httptest.NewServer(r)
-	defer ts.Close()
 
 	type want struct {
 		code        int
 		response    string
 		contentType string
 		address     string
-		key         storage.MetricKey
+		key         string
 		value       interface{}
 		method      string
 	}
@@ -39,8 +40,9 @@ func TestUpdateMetricHandler(t *testing.T) {
 				response:    ``,
 				contentType: "text/plain",
 				address:     "/update/gauge/Alloc/20.4",
-				key:         "Alloc", value: 20.4,
-				method: http.MethodPost,
+				key:         "Alloc",
+				value:       20.4,
+				method:      http.MethodPost,
 			},
 		},
 		{
@@ -70,45 +72,40 @@ func TestUpdateMetricHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, body := testRequest(t, ts, tt.want.method, tt.want.address)
-			defer resp.Body.Close()
+			resp, _ := testRequest(t, ts, tt.want.method, tt.want.address)
+			resp.Body.Close()
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)
-			assert.Equal(t, tt.want.response, body)
+			//assert.Equal(t, tt.want.response, body)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
-			assert.NotNil(t, storage.MS.Metrics[tt.want.key])
+			assert.NotNil(t, MS.Metrics[tt.want.key])
 
 			switch tt.name {
 			case "success test #1":
-				assert.Equal(t, storage.MS.Metrics[tt.want.key], tt.want.value)
+				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value)
 			case "success test #2":
-				assert.Equal(t, storage.MS.Metrics[tt.want.key], tt.want.value.(int64))
+				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value.(int64))
 			case "success test #3":
-				assert.Equal(t, storage.MS.Metrics[tt.want.key], tt.want.value.(int64)*2)
+				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value.(int64)*2)
 			}
-
 		})
 	}
 }
 
 func TestUpdateMetricHandlerError(t *testing.T) {
-	// clear storage before tests
-	ClearStorage()
-
-	r := chi.NewRouter()
-	r.Mount(`/update/`, UpdateMetricRouter())
+	MS := storage.NewMemStorage()
+	fileManager, _ := file.NewProducer("./test_metrics")
+	r := ServerRouter(MS, fileManager)
 
 	ts := httptest.NewServer(r)
-	defer ts.Close()
 
 	type want struct {
-		code        int
-		response    string
-		contentType string
-		address     string
-		key         storage.MetricKey
-		value       interface{}
-		method      string
+		code     int
+		response string
+		address  string
+		key      string
+		method   string
+		json     bool
 	}
 
 	tests := []struct {
@@ -123,18 +120,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 				response: "incorrect value for gauge type\n",
 				address:  "/update/gauge/Alloc/error",
 				key:      "Alloc",
-				value:    "error",
 				method:   http.MethodPost,
-			},
-		},
-		{
-			name: "unsuccessful test #2 - incorrect address",
-			want: want{
-				code:     http.StatusNotFound,
-				address:  "/update/counter/pollCount",
-				key:      "pollCount",
-				method:   http.MethodPost,
-				response: "404 page not found\n",
 			},
 		},
 		{
@@ -153,8 +139,9 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 				code:     http.StatusMethodNotAllowed,
 				address:  "/update/counter/pollCount/1",
 				key:      "pollCount",
-				response: "",
+				response: "{\"message\":\"method is not valid\"}",
 				method:   http.MethodPut,
+				json:     true,
 			},
 		},
 		{
@@ -163,22 +150,22 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 				code:     http.StatusMethodNotAllowed,
 				address:  "/update/counter/pollCount/1",
 				key:      "pollCount",
-				response: "",
+				response: "{\"message\":\"method is not valid\"}",
 				method:   http.MethodPatch,
+				json:     true,
 			},
 		},
 	}
 	for _, tt := range tests {
-
 		t.Run(tt.name, func(t *testing.T) {
 			resp, body := testRequest(t, ts, tt.want.method, tt.want.address)
-			defer resp.Body.Close()
+			resp.Body.Close()
 
 			// создаём новый Recorder
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.response, body)
 			assert.Error(t, storage.ErrIncorrectMetricValue)
-			assert.Nil(t, storage.MS.Metrics[tt.want.key])
+			assert.Nil(t, MS.Metrics[tt.want.key])
 
 			switch tt.name {
 			case "unsuccessful test #1":

@@ -1,9 +1,11 @@
 package server
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 func mockedIncorrectMetricTypes() []string {
@@ -32,7 +34,6 @@ func TestIsIncorrectType(t *testing.T) {
 			check.False(result)
 		}
 	}
-
 }
 
 func TestIsCorrectType(t *testing.T) {
@@ -45,5 +46,4 @@ func TestIsCorrectType(t *testing.T) {
 			check.True(result)
 		}
 	}
-
 }

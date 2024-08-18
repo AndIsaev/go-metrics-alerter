@@ -3,15 +3,16 @@ package server
 import (
 	"errors"
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"strconv"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 )
 
 // IsCorrectType - check correct type for Metrics
 func IsCorrectType(MetricType string) bool {
 	for _, v := range []string{common.Counter, common.Gauge} {
 		if v == MetricType {
-
 			return true
 		}
 	}
@@ -32,4 +33,13 @@ func DefineMetricValue(MetricType string, MetricValue string) (interface{}, erro
 	}
 	err := fmt.Sprintf("incorrect value for %v type", MetricType)
 	return nil, errors.New(err)
+}
+
+func SaveMetricsOnFile(producer *file.Producer, metrics common.Metrics) error {
+	err := producer.WriteMetrics(&metrics)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
