@@ -14,7 +14,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
-func ServerRouter(memory *storage.MemStorage, fileProducer *file.Producer) chi.Router {
+func ServerRouter(memory *storage.MemStorage, fileProducer *file.Producer, DbConn storage.PgStorage) chi.Router {
 	r := chi.NewRouter()
 	r.Use(logger.RequestLogger, logger.ResponseLogger)
 	r.Use(middleware.StripSlashes)
@@ -39,6 +39,9 @@ func ServerRouter(memory *storage.MemStorage, fileProducer *file.Producer) chi.R
 
 	r.Group(func(r chi.Router) {
 		r.Use(mid.GzipMiddleware)
+
+		// Ping db connection
+		r.Get(`/ping`, PingHandler(DbConn))
 
 		// update
 		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, SetMetricHandler(memory))

@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mock"
+	"github.com/golang/mock/gomock"
 	"net/http"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +17,10 @@ import (
 func TestUpdateMetricHandler(t *testing.T) {
 	MS := storage.NewMemStorage()
 	fileManager, _ := file.NewProducer("./test_metrics")
-	r := ServerRouter(MS, fileManager)
+
+	ctrl := gomock.NewController(t)
+	mockPgStorage := mock.NewMockPgStorage(ctrl)
+	r := ServerRouter(MS, fileManager, mockPgStorage)
 
 	ts := httptest.NewServer(r)
 
@@ -95,7 +100,10 @@ func TestUpdateMetricHandler(t *testing.T) {
 func TestUpdateMetricHandlerError(t *testing.T) {
 	MS := storage.NewMemStorage()
 	fileManager, _ := file.NewProducer("./test_metrics")
-	r := ServerRouter(MS, fileManager)
+	ctrl := gomock.NewController(t)
+	mockPgStorage := mock.NewMockPgStorage(ctrl)
+
+	r := ServerRouter(MS, fileManager, mockPgStorage)
 
 	ts := httptest.NewServer(r)
 
