@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/golang/mock/gomock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/golang/mock/gomock"
 
 	"github.com/stretchr/testify/assert"
 

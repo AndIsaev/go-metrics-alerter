@@ -3,14 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+
+	"github.com/go-chi/chi"
+	"github.com/jackc/pgx/v5"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/go-chi/chi"
-	"github.com/jackc/pgx/v5"
-	"log"
-	"os"
 )
 
 // ServerApp - structure of application

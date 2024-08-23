@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"context"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"net/http"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
 func PingHandler(DbConn storage.PgStorage) http.HandlerFunc {
@@ -17,7 +18,5 @@ func PingHandler(DbConn storage.PgStorage) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		return
-
 	}
 }

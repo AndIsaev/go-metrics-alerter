@@ -1,9 +1,11 @@
 package handlers
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mock"
-	"github.com/golang/mock/gomock"
 	"net/http"
+
+	"github.com/golang/mock/gomock"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mock"
 
 	"github.com/stretchr/testify/assert"
 
