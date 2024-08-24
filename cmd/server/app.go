@@ -50,12 +50,14 @@ func NewServerApp(cfg *service.ServerConfig) *ServerApp {
 	}
 
 	// connect to DB
-	conn, err := pgx.Connect(context.Background(), cfg.DbDsn)
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
+	if cfg.DbDsn != "" {
+		conn, err := pgx.Connect(context.Background(), cfg.DbDsn)
+		if err != nil {
+			log.Fatalf("Unable to connect to database: %v\n", err)
+		}
 
-	app.DbConn = conn
+		app.DbConn = conn
+	}
 
 	// init route
 	app.Route = handlers.ServerRouter(app.MemStorage, app.FileProducer, app.DbConn)

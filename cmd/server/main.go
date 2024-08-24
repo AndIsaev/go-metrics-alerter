@@ -17,7 +17,9 @@ func run() error {
 	config := service.NewServerConfig()
 	app := NewServerApp(config)
 
-	defer app.DbConn.Close(context.Background())
+	if app.DbConn != nil {
+		defer app.DbConn.Close(context.Background())
+	}
 
 	fmt.Println("Running server on", config.Address)
 	return http.ListenAndServe(config.Address, app.Route)
