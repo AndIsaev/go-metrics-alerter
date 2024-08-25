@@ -20,6 +20,8 @@ func run() error {
 	if app.DbConn != nil {
 		defer app.DbConn.Close(context.Background())
 	}
+	defer app.FileConsumer.Close()
+	defer app.FileProducer.Close()
 
 	fmt.Println("Running server on", config.Address)
 	return http.ListenAndServe(config.Address, app.Route)
