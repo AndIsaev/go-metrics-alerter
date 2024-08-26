@@ -39,7 +39,7 @@ type TestServerApp struct {
 	MemStorage   *storage.MemStorage
 	FileProducer *file.Producer
 	FileConsumer *file.Consumer
-	DbConn       storage.PgStorage
+	DBConn       storage.PgStorage
 	Config       *service.ServerConfig
 	Server       *httptest.Server
 }
@@ -92,7 +92,7 @@ func (a *TestServerApp) initRouter() {
 		r.Use(mid.GzipMiddleware)
 
 		// Ping db connection
-		r.Get(`/ping`, PingHandler(a.DbConn))
+		r.Get(`/ping`, PingHandler(a.DBConn))
 
 		// update
 		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, SetMetricHandler(a.MemStorage))

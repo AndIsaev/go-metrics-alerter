@@ -17,7 +17,7 @@ import (
 func TestGetMetricHandler(t *testing.T) {
 	testApp := NewTestServerApp()
 	ctrl := gomock.NewController(t)
-	testApp.DbConn = mock.NewMockPgStorage(ctrl)
+	testApp.DBConn = mock.NewMockPgStorage(ctrl)
 
 	testApp.MemStorage.Metrics["pollCount"] = 20
 

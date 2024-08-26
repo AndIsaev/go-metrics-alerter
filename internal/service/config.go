@@ -15,7 +15,7 @@ type ServerConfig struct {
 	StoreInterval   time.Duration `env:"STORE_INTERVAL"`
 	FileStoragePath string        `env:"FILE_STORAGE_PATH"`
 	Restore         bool          `env:"RESTORE"`
-	DbDsn           string        `env:"DATABASE_DSN"`
+	DBDsn           string        `env:"DATABASE_DSN"`
 }
 
 func NewServerConfig() *ServerConfig {
@@ -36,10 +36,10 @@ func NewServerConfig() *ServerConfig {
 		cfg.Address = envRunAddr
 	}
 
-	if envDbDsn := os.Getenv("DATABASE_DSN"); envDbDsn != "" {
-		cfg.DbDsn = envDbDsn
+	if envDBDsn := os.Getenv("DATABASE_DSN"); envDBDsn != "" {
+		cfg.DBDsn = envDBDsn
 	} else {
-		cfg.DbDsn = dbDsn
+		cfg.DBDsn = dbDsn
 	}
 
 	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {

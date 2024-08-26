@@ -32,7 +32,7 @@ type ServerApp struct {
 	MemStorage   *storage.MemStorage
 	FileProducer *file.Producer
 	FileConsumer *file.Consumer
-	DbConn       storage.PgStorage
+	DBConn       storage.PgStorage
 	Config       *service.ServerConfig
 	Server       *http.Server
 }
@@ -127,13 +127,13 @@ func (a *ServerApp) createMetricsDir() error {
 
 // connectDB - connection to database
 func (a *ServerApp) connectDB(ctx context.Context) {
-	if a.Config.DbDsn != "" {
-		conn, err := pgx.Connect(ctx, a.Config.DbDsn)
+	if a.Config.DBDsn != "" {
+		conn, err := pgx.Connect(ctx, a.Config.DBDsn)
 		if err != nil {
 			log.Fatalf("unable to connect to database: %s\n", err.Error())
 		}
 
-		a.DbConn = conn
+		a.DBConn = conn
 	}
 }
 
@@ -144,7 +144,7 @@ func (a *ServerApp) Shutdown(ctx context.Context) {
 	if err := a.FileConsumer.Close(); err != nil {
 		fmt.Printf("%s\n", err.Error())
 	}
-	if err := a.DbConn.Close(ctx); err != nil {
+	if err := a.DBConn.Close(ctx); err != nil {
 		fmt.Printf("%s\n", err.Error())
 	}
 }
@@ -177,7 +177,7 @@ func (a *ServerApp) initRouter() {
 		r.Use(mid.GzipMiddleware)
 
 		// Ping db connection
-		r.Get(`/ping`, handlers.PingHandler(a.DbConn))
+		r.Get(`/ping`, handlers.PingHandler(a.DBConn))
 
 		// update
 		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, handlers.SetMetricHandler(a.MemStorage))

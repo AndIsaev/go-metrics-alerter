@@ -17,7 +17,7 @@ import (
 func TestUpdateMetricHandler(t *testing.T) {
 	testApp := NewTestServerApp()
 	ctrl := gomock.NewController(t)
-	testApp.DbConn = mock.NewMockPgStorage(ctrl)
+	testApp.DBConn = mock.NewMockPgStorage(ctrl)
 
 	ts := testApp.Server
 
@@ -97,7 +97,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 func TestUpdateMetricHandlerError(t *testing.T) {
 	testApp := NewTestServerApp()
 	ctrl := gomock.NewController(t)
-	testApp.DbConn = mock.NewMockPgStorage(ctrl)
+	testApp.DBConn = mock.NewMockPgStorage(ctrl)
 
 	ts := testApp.Server
 
