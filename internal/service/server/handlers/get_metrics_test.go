@@ -3,28 +3,25 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mock"
+
 	"github.com/stretchr/testify/assert"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mock"
 )
 
 func TestGetMetricHandler(t *testing.T) {
-	MemStorage := storage.NewMemStorage()
-	fileManager, _ := file.NewProducer("./test_metrics")
+	testApp := NewTestServerApp()
 	ctrl := gomock.NewController(t)
-	mockPgStorage := mock.NewMockPgStorage(ctrl)
+	testApp.DbConn = mock.NewMockPgStorage(ctrl)
 
-	r := ServerRouter(MemStorage, fileManager, mockPgStorage)
-	MemStorage.Metrics["pollCount"] = 20
+	testApp.MemStorage.Metrics["pollCount"] = 20
 
-	ts := httptest.NewServer(r)
+	ts := testApp.Server
 	defer ts.Close()
 
 	type want struct {
@@ -79,7 +76,7 @@ func TestGetMetricHandler(t *testing.T) {
 			resp.Body.Close()
 
 			if tt.name != "test #3 - case with counter type" {
-				assert.Nil(t, MemStorage.Metrics[tt.want.key])
+				assert.Nil(t, testApp.MemStorage.Metrics[tt.want.key])
 			}
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)
