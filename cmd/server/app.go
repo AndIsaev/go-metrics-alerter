@@ -46,9 +46,21 @@ func New() *ServerApp {
 	// init file storage
 	app.MemStorage = storage.NewMemStorage()
 
+	// create directory
+	if err := createMetricsDir(config.FileStoragePath); err != nil {
+		log.Fatalf("can't create directory because of: %s\n", err.Error())
+	}
+
 	// set producer and consumer for file manager
-	producer, _ := file.NewProducer(config.FileStoragePath)
-	consumer, _ := file.NewConsumer(config.FileStoragePath)
+	producer, err := file.NewProducer(config.FileStoragePath)
+	if err != nil {
+		log.Fatalf("can't initialize FileProducer because of: %s\n", err.Error())
+	}
+
+	consumer, err := file.NewConsumer(config.FileStoragePath)
+	if err != nil {
+		log.Fatalf("can't initialize FileConsumer because of: %s\n", err.Error())
+	}
 
 	app.FileProducer = producer
 	app.FileConsumer = consumer
@@ -61,11 +73,6 @@ func New() *ServerApp {
 func (a *ServerApp) StartApp(ctx context.Context) error {
 	if err := logger.Initialize(); err != nil {
 		return err
-	}
-
-	// create directory
-	if err := a.createMetricsDir(); err != nil {
-		log.Fatalf("can't create directory: %s\n", err.Error())
 	}
 
 	// download metrics from disc to storage
@@ -110,18 +117,17 @@ func (a *ServerApp) downloadMetrics() {
 		}
 		fmt.Println("metrics downloaded")
 	}
-	defer a.FileConsumer.Close()
 }
 
 // createMetricsDir - create directory for metrics
-func (a *ServerApp) createMetricsDir() error {
-	if _, err := os.Stat(a.Config.FileStoragePath); os.IsNotExist(err) {
-		if err = os.Mkdir(a.Config.FileStoragePath, 0755); err != nil {
-			fmt.Printf("the directory %s not created\n", a.Config.FileStoragePath)
+func createMetricsDir(fileStoragePath string) error {
+	if _, err := os.Stat(fileStoragePath); os.IsNotExist(err) {
+		if err = os.Mkdir(fileStoragePath, 0755); err != nil {
+			fmt.Printf("the directory %s not created\n", fileStoragePath)
 			return err
 		}
 	}
-	fmt.Printf("the directory %s is done\n", a.Config.FileStoragePath)
+	fmt.Printf("the directory %s is done\n", fileStoragePath)
 	return nil
 }
 
