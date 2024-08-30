@@ -79,7 +79,14 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 	a.downloadMetrics()
 
 	// connect to DB
-	a.connectDB(ctx)
+	if err := a.connectToDB(ctx); err != nil {
+		return err
+	}
+
+	// создаем таблицы
+	if err := a.createTables(ctx); err != nil {
+		return err
+	}
 
 	// init router
 	a.initRouter()
@@ -131,16 +138,17 @@ func createMetricsDir(fileStoragePath string) error {
 	return nil
 }
 
-// connectDB - connection to database
-func (a *ServerApp) connectDB(ctx context.Context) {
+// connectToDB - connection to database
+func (a *ServerApp) connectToDB(ctx context.Context) error {
 	if a.Config.DBDsn != "" {
 		conn, err := pgx.Connect(ctx, a.Config.DBDsn)
 		if err != nil {
-			log.Fatalf("unable to connect to database: %s\n", err.Error())
+			log.Printf("unable to connect to database: %s\n", err.Error())
+			return err
 		}
-
 		a.DBConn = conn
 	}
+	return nil
 }
 
 func (a *ServerApp) Shutdown(ctx context.Context) {
@@ -150,8 +158,11 @@ func (a *ServerApp) Shutdown(ctx context.Context) {
 	if err := a.FileConsumer.Close(); err != nil {
 		fmt.Printf("%s\n", err.Error())
 	}
-	if err := a.DBConn.Close(ctx); err != nil {
-		fmt.Printf("%s\n", err.Error())
+
+	if a.DBConn != nil {
+		if err := a.DBConn.Close(ctx); err != nil {
+			fmt.Printf("%s\n", err.Error())
+		}
 	}
 }
 
@@ -196,4 +207,21 @@ func (a *ServerApp) initRouter() {
 		// main page
 		r.Get(`/`, handlers.MainPageHandler(a.MemStorage))
 	})
+}
+
+func (a *ServerApp) createTables(ctx context.Context) error {
+	if a.DBConn != nil {
+
+		queryMetricTable := `create table if not exists metric(
+								id varchar(200) unique not null, 
+								"type" varchar(50) not null, 
+								delta integer, 
+								"value" double precision);`
+		_, err := a.DBConn.Exec(ctx, queryMetricTable)
+		if err != nil {
+			log.Printf("can't execute query because of %s\n", err.Error())
+			return err
+		}
+	}
+	return nil
 }
