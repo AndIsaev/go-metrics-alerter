@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	pgconn "github.com/jackc/pgx/v5/pgconn"
 )
 
 // MockPgStorage is a mock of PgStorage interface.
@@ -46,6 +47,26 @@ func (m *MockPgStorage) Close(ctx context.Context) error {
 func (mr *MockPgStorageMockRecorder) Close(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockPgStorage)(nil).Close), ctx)
+}
+
+// Exec mocks base method.
+func (m *MockPgStorage) Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, sql}
+	for _, a := range arguments {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Exec", varargs...)
+	ret0, _ := ret[0].(pgconn.CommandTag)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exec indicates an expected call of Exec.
+func (mr *MockPgStorageMockRecorder) Exec(ctx, sql interface{}, arguments ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, sql}, arguments...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exec", reflect.TypeOf((*MockPgStorage)(nil).Exec), varargs...)
 }
 
 // Ping mocks base method.
