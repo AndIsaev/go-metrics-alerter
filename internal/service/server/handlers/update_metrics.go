@@ -45,7 +45,7 @@ func SetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
 }
 
 // UpdateHandler - saving metrics from agent
-func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, DBConn storage.PgStorage) http.HandlerFunc {
+func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storage.PgStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metrics := common.Metrics{}
 		w.Header().Set("Content-Type", "application/json")
@@ -61,8 +61,8 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, DBConn stor
 		}
 
 		// save metrics to file
-		if DBConn != nil {
-			exec, err := DBConn.Exec(
+		if conn != nil {
+			exec, err := conn.Exec(
 				context.Background(),
 				`insert into metric (id, type, delta, value)
 								  values ($1, $2, $3, $4)	`, metrics.ID, metrics.MType, metrics.Delta, metrics.Value)

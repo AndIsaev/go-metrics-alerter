@@ -66,20 +66,18 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 		}
 	}
 
-	if a.Config.FileStoragePath != "" {
-		// create directory
-		if err := createMetricsDir(a.Config.FileStoragePath); err != nil {
-			log.Printf("can't create directory because of: %s\n", err.Error())
-			return err
-		}
-		// set producer and consumer for file manager
-		if err := a.initFileManagers(); err != nil {
-			return err
-		}
-
-		// download metrics from disc to storage
-		a.downloadMetrics()
+	// create directory
+	if err := createMetricsDir(a.Config.FileStoragePath); err != nil {
+		log.Printf("can't create directory because of: %s\n", err.Error())
+		return err
 	}
+	// set producer and consumer for file manager
+	if err := a.initFileManagers(); err != nil {
+		return err
+	}
+
+	// download metrics from disc to storage
+	a.downloadMetrics()
 
 	// init router
 	a.initRouter()
