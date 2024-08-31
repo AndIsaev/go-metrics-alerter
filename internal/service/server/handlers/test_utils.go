@@ -96,7 +96,7 @@ func (a *TestServerApp) initRouter() {
 
 		// update
 		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, SetMetricHandler(a.MemStorage))
-		r.Post(`/update`, UpdateHandler(a.MemStorage, a.FileProducer))
+		r.Post(`/update`, UpdateHandler(a.MemStorage, a.FileProducer, a.DBConn))
 
 		// value
 		r.Get(`/value/{MetricType}/{MetricName}`, GetMetricHandler(a.MemStorage))

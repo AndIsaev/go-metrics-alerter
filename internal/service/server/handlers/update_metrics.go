@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/go-chi/chi"
 	"github.com/mailru/easyjson"
@@ -43,7 +45,7 @@ func SetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
 }
 
 // UpdateHandler - saving metrics from agent
-func UpdateHandler(mem *storage.MemStorage, producer *file.Producer) http.HandlerFunc {
+func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, DBConn storage.PgStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metrics := common.Metrics{}
 		w.Header().Set("Content-Type", "application/json")
@@ -59,13 +61,26 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer) http.Handle
 		}
 
 		// save metrics to file
-		if err := server.SaveMetricsOnFile(producer, metrics); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		if DBConn != nil {
+			exec, err := DBConn.Exec(
+				context.Background(),
+				`insert into metric (id, type, delta, value)
+								  values ($1, $2, $3, $4)	`, metrics.ID, metrics.MType, metrics.Delta, metrics.Value)
+			fmt.Println(exec, err)
+			if err != nil {
+				return
+			}
 		}
 
-		// save new metrics to DB
-		mem.Set(&metrics)
+		if producer != nil {
+			if err := server.SaveMetricsOnFile(producer, metrics); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		} else {
+			// save new metrics to DB
+			mem.Set(&metrics)
+		}
 
 		result, _ := easyjson.Marshal(metrics)
 
