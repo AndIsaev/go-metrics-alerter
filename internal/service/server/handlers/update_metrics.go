@@ -65,7 +65,8 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storag
 			exec, err := conn.Exec(
 				context.Background(),
 				`insert into metric (id, type, delta, value)
-								  values ($1, $2, $3, $4)	`, metrics.ID, metrics.MType, metrics.Delta, metrics.Value)
+					values ($1, $2, $3, $4)	
+							`, metrics.ID, metrics.MType, metrics.Delta, metrics.Value)
 			fmt.Println(exec, err)
 			if err != nil {
 				return

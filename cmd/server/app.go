@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/go-chi/chi/middleware"
 	"github.com/mailru/easyjson"
 
@@ -159,7 +160,6 @@ func (a *ServerApp) Shutdown(ctx context.Context) {
 			}
 		}
 	}
-
 }
 
 // initRouter - initialize new router
@@ -207,7 +207,6 @@ func (a *ServerApp) initRouter() {
 
 func (a *ServerApp) createTables(ctx context.Context) error {
 	if a.DBConn != nil {
-
 		queryMetricTable := `create table if not exists metric(
 								id varchar(200) unique not null, 
 								"type" varchar(50) not null, 
