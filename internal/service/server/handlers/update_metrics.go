@@ -77,10 +77,9 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storag
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-		} else {
-			// save new metrics to DB
-			mem.Set(&metrics)
 		}
+		// save new metrics to DB
+		mem.Set(&metrics)
 
 		result, _ := easyjson.Marshal(metrics)
 
