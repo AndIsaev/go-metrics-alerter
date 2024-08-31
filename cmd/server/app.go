@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/go-chi/chi/middleware"
 	"github.com/mailru/easyjson"
 
@@ -46,25 +44,6 @@ func New() *ServerApp {
 	// init file storage
 	app.MemStorage = storage.NewMemStorage()
 
-	// create directory
-	if err := createMetricsDir(config.FileStoragePath); err != nil {
-		log.Fatalf("can't create directory because of: %s\n", err.Error())
-	}
-
-	// set producer and consumer for file manager
-	producer, err := file.NewProducer(config.FileStoragePath)
-	if err != nil {
-		log.Fatalf("can't initialize FileProducer because of: %s\n", err.Error())
-	}
-
-	consumer, err := file.NewConsumer(config.FileStoragePath)
-	if err != nil {
-		log.Fatalf("can't initialize FileConsumer because of: %s\n", err.Error())
-	}
-
-	app.FileProducer = producer
-	app.FileConsumer = consumer
-
 	app.Router = chi.NewRouter()
 
 	return app
@@ -75,17 +54,31 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 		return err
 	}
 
-	// download metrics from disc to storage
-	a.downloadMetrics()
+	if a.Config.DBDsn != "" {
+		// connect to DB
+		if err := a.connectToDB(ctx); err != nil {
+			return err
+		}
 
-	// connect to DB
-	if err := a.connectToDB(ctx); err != nil {
-		return err
+		// создаем таблицы
+		if err := a.createTables(ctx); err != nil {
+			return err
+		}
 	}
 
-	// создаем таблицы
-	if err := a.createTables(ctx); err != nil {
-		return err
+	if a.Config.FileStoragePath != "" {
+		// create directory
+		if err := createMetricsDir(a.Config.FileStoragePath); err != nil {
+			log.Printf("can't create directory because of: %s\n", err.Error())
+			return err
+		}
+		// set producer and consumer for file manager
+		if err := a.initFileManagers(); err != nil {
+			return err
+		}
+
+		// download metrics from disc to storage
+		a.downloadMetrics()
 	}
 
 	// init router
@@ -99,7 +92,7 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 
 // startHTTPServer - start http server
 func (a *ServerApp) startHTTPServer() error {
-	fmt.Printf("start server on: %s\n", a.Config.Address)
+	log.Printf("start server on: %s\n", a.Config.Address)
 	return a.Server.ListenAndServe()
 }
 
@@ -114,7 +107,7 @@ func (a *ServerApp) initHTTPServer() {
 // downloadMetrics - Read metrics from disk
 func (a *ServerApp) downloadMetrics() {
 	if a.Config.Restore {
-		fmt.Println("read metrics from disk")
+		log.Println("read metrics from disk")
 		for {
 			m, err := a.FileConsumer.ReadMetrics()
 			if err != nil {
@@ -122,7 +115,7 @@ func (a *ServerApp) downloadMetrics() {
 			}
 			a.MemStorage.Set(m)
 		}
-		fmt.Println("metrics downloaded")
+		log.Println("metrics downloaded")
 	}
 }
 
@@ -130,11 +123,11 @@ func (a *ServerApp) downloadMetrics() {
 func createMetricsDir(fileStoragePath string) error {
 	if _, err := os.Stat(fileStoragePath); os.IsNotExist(err) {
 		if err = os.Mkdir(fileStoragePath, 0755); err != nil {
-			fmt.Printf("the directory %s not created\n", fileStoragePath)
+			log.Printf("the directory %s not created\n", fileStoragePath)
 			return err
 		}
 	}
-	fmt.Printf("the directory %s is done\n", fileStoragePath)
+	log.Printf("the directory %s is done\n", fileStoragePath)
 	return nil
 }
 
@@ -152,18 +145,23 @@ func (a *ServerApp) connectToDB(ctx context.Context) error {
 }
 
 func (a *ServerApp) Shutdown(ctx context.Context) {
-	if err := a.FileProducer.Close(); err != nil {
-		fmt.Printf("%s\n", err.Error())
-	}
-	if err := a.FileConsumer.Close(); err != nil {
-		fmt.Printf("%s\n", err.Error())
-	}
-
-	if a.DBConn != nil {
-		if err := a.DBConn.Close(ctx); err != nil {
-			fmt.Printf("%s\n", err.Error())
+	if a.Config.FileStoragePath != "" {
+		if err := a.FileProducer.Close(); err != nil {
+			log.Printf("%s\n", err.Error())
+		}
+		if err := a.FileConsumer.Close(); err != nil {
+			log.Printf("%s\n", err.Error())
 		}
 	}
+
+	if a.Config.DBDsn != "" {
+		if a.DBConn != nil {
+			if err := a.DBConn.Close(ctx); err != nil {
+				log.Printf("%s\n", err.Error())
+			}
+		}
+	}
+
 }
 
 // initRouter - initialize new router
@@ -223,5 +221,23 @@ func (a *ServerApp) createTables(ctx context.Context) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (a *ServerApp) initFileManagers() error {
+	producer, err := file.NewProducer(a.Config.FileStoragePath)
+	if err != nil {
+		log.Printf("can't initialize FileProducer because of: %s\n", err.Error())
+		return err
+	}
+
+	consumer, err := file.NewConsumer(a.Config.FileStoragePath)
+	if err != nil {
+		log.Printf("can't initialize FileConsumer because of: %s\n", err.Error())
+		return err
+	}
+
+	a.FileProducer = producer
+	a.FileConsumer = consumer
 	return nil
 }
