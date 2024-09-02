@@ -14,8 +14,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jackc/pgx/v5"
-
 	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
 
 	"github.com/go-chi/chi"
@@ -31,7 +29,7 @@ type ServerApp struct {
 	MemStorage   *storage.MemStorage
 	FileProducer *file.Producer
 	FileConsumer *file.Consumer
-	DBConn       storage.PgStorage
+	DBConn       storage.BaseStorage
 	Config       *service.ServerConfig
 	Server       *http.Server
 }
@@ -57,12 +55,14 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 
 	if a.Config.DBDsn != "" {
 		// connect to DB
-		if err := a.connectToDB(ctx); err != nil {
+		conn, err := storage.NewPostgresStorage(ctx, a.Config.DBDsn)
+		if err != nil {
 			return err
 		}
+		a.DBConn = conn
 
 		// создаем таблицы
-		if err := a.createTables(ctx); err != nil {
+		if err := a.DBConn.Create(ctx); err != nil {
 			return err
 		}
 	}
@@ -130,19 +130,6 @@ func createMetricsDir(fileStoragePath string) error {
 	return nil
 }
 
-// connectToDB - connection to database
-func (a *ServerApp) connectToDB(ctx context.Context) error {
-	if a.Config.DBDsn != "" {
-		conn, err := pgx.Connect(ctx, a.Config.DBDsn)
-		if err != nil {
-			log.Printf("unable to connect to database: %s\n", err.Error())
-			return err
-		}
-		a.DBConn = conn
-	}
-	return nil
-}
-
 func (a *ServerApp) Shutdown(ctx context.Context) {
 	if a.Config.FileStoragePath != "" {
 		if err := a.FileProducer.Close(); err != nil {
@@ -203,22 +190,6 @@ func (a *ServerApp) initRouter() {
 		// main page
 		r.Get(`/`, handlers.MainPageHandler(a.MemStorage))
 	})
-}
-
-func (a *ServerApp) createTables(ctx context.Context) error {
-	if a.DBConn != nil {
-		queryMetricTable := `create table if not exists metric(
-								id varchar(200) unique not null, 
-								"type" varchar(50) not null, 
-								delta integer, 
-								"value" double precision);`
-		_, err := a.DBConn.Exec(ctx, queryMetricTable)
-		if err != nil {
-			log.Printf("can't execute query because of %s\n", err.Error())
-			return err
-		}
-	}
-	return nil
 }
 
 func (a *ServerApp) initFileManagers() error {

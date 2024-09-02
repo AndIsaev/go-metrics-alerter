@@ -7,7 +7,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
-func PingHandler(DBConn storage.PgStorage) http.HandlerFunc {
+func PingHandler(DBConn storage.BaseStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Encoding", "gzip")

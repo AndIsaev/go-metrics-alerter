@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mock"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
 
 	"github.com/stretchr/testify/assert"
 
@@ -17,7 +17,7 @@ import (
 func TestUpdateMetricHandler(t *testing.T) {
 	testApp := NewTestServerApp()
 	ctrl := gomock.NewController(t)
-	testApp.DBConn = mock.NewMockPgStorage(ctrl)
+	testApp.DBConn = mock.NewMockBaseStorage(ctrl)
 
 	ts := testApp.Server
 
@@ -97,7 +97,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 func TestUpdateMetricHandlerError(t *testing.T) {
 	testApp := NewTestServerApp()
 	ctrl := gomock.NewController(t)
-	testApp.DBConn = mock.NewMockPgStorage(ctrl)
+	testApp.DBConn = mock.NewMockBaseStorage(ctrl)
 
 	ts := testApp.Server
 

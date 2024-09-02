@@ -3,8 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-
 	"github.com/go-chi/chi"
 	"github.com/mailru/easyjson"
 
@@ -45,7 +43,7 @@ func SetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
 }
 
 // UpdateHandler - saving metrics from agent
-func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storage.PgStorage) http.HandlerFunc {
+func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storage.BaseStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metrics := common.Metrics{}
 		w.Header().Set("Content-Type", "application/json")
@@ -62,13 +60,9 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storag
 
 		// save metrics to file
 		if conn != nil {
-			exec, err := conn.Exec(
-				context.Background(),
-				`insert into metric (id, type, delta, value)
-					values ($1, $2, $3, $4)	
-							`, metrics.ID, metrics.MType, metrics.Delta, metrics.Value)
-			fmt.Println(exec, err)
+			err := conn.Insert(context.Background(), metrics)
 			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 		}

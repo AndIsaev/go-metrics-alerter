@@ -39,7 +39,7 @@ type TestServerApp struct {
 	MemStorage   *storage.MemStorage
 	FileProducer *file.Producer
 	FileConsumer *file.Consumer
-	DBConn       storage.PgStorage
+	DBConn       storage.BaseStorage
 	Config       *service.ServerConfig
 	Server       *httptest.Server
 }

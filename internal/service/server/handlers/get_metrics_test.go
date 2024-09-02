@@ -2,22 +2,21 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"net/http"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mock"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
 func TestGetMetricHandler(t *testing.T) {
 	testApp := NewTestServerApp()
 	ctrl := gomock.NewController(t)
-	testApp.DBConn = mock.NewMockPgStorage(ctrl)
+	testApp.DBConn = mock.NewMockBaseStorage(ctrl)
 
 	testApp.MemStorage.Metrics["pollCount"] = 20
 
