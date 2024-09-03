@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/go-chi/chi"
 	"github.com/mailru/easyjson"
 
@@ -10,8 +12,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-
-	"net/http"
 )
 
 func SetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {

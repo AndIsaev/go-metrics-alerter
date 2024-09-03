@@ -2,9 +2,11 @@ package storage
 
 import (
 	"context"
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/jackc/pgx/v5"
 	"log"
+
+	"github.com/jackc/pgx/v5"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 type PostgresStorage struct {
@@ -56,5 +58,4 @@ func (s *PostgresStorage) Create(ctx context.Context) error {
 		return err
 	}
 	return nil
-
 }

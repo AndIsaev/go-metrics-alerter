@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
+	mock "github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
 
 	"github.com/stretchr/testify/assert"
 
