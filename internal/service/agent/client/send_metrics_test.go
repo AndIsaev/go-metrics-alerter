@@ -49,7 +49,7 @@ func TestSendMetricsClient(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp := httptest.NewRecorder()
-			err := SendMetricsClient(c, tt.want.url, tt.want.body)
+			err := SendMetricHandler(c, tt.want.url, tt.want.body)
 
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want.status, resp.Code)

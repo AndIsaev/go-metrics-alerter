@@ -2,24 +2,20 @@ package main
 
 import (
 	"context"
-
-	"github.com/go-chi/chi/middleware"
-	"github.com/mailru/easyjson"
-
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
-	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
-
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
-
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	"github.com/mailru/easyjson"
 
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
 	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
+	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
@@ -188,6 +184,7 @@ func (a *ServerApp) initRouter() {
 		// update
 		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, handlers.SetMetricHandler(a.MemStorage))
 		r.Post(`/update`, handlers.UpdateHandler(a.MemStorage, a.FileProducer, a.DBConn))
+		r.Post(`/updates`, handlers.UpdateBatchHandler(a.DBConn))
 
 		// value
 		r.Get(`/value/{MetricType}/{MetricName}`, handlers.GetMetricHandler(a.MemStorage))

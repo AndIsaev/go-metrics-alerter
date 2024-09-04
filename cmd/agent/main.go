@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -17,33 +17,53 @@ func runPullReport(metrics *metrics.StorageMetrics) {
 	metrics.Pull()
 }
 
-func runSendReport(url string, metrics *metrics.StorageMetrics) error {
+func SendMetric(url string, metrics *metrics.StorageMetrics) error {
 	c := resty.New()
 	c.OnBeforeRequest(middleware.GzipRequestMiddleware)
 
 	for _, v := range metrics.Metrics {
 		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: v.Value, Delta: v.Delta}
-		e := client.SendMetricsClient(c, url, metric)
-		if e != nil {
-			return e
+		err := client.SendMetricHandler(c, url, metric)
+		if err != nil {
+			return err
 		}
+	}
+	return nil
+}
+
+func SendMetrics(url string, storage *metrics.StorageMetrics) error {
+	c := resty.New()
+	c.OnBeforeRequest(middleware.GzipRequestMiddleware)
+	values := make([]common.Metrics, 0, 100)
+
+	for _, v := range storage.Metrics {
+		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: v.Value, Delta: v.Delta}
+		values = append(values, metric)
+	}
+
+	if err := client.SendMetricsHandler(c, url, values); err != nil {
+		return err
 	}
 	return nil
 }
 
 func main() {
 	config := service.NewAgentConfig()
-	fmt.Println("Start Agent")
+	log.Println("Start Agent")
 	for {
-		fmt.Println("Pull Metrics")
+		log.Println("Pull Metrics")
 
 		runPullReport(config.StorageMetrics)
 
 		time.Sleep(config.PollInterval)
 
-		fmt.Println("Send Metrics to Server")
+		log.Println("Send Metrics to Server")
 
-		if err := runSendReport(config.UpdateMetricAddress, config.StorageMetrics); err != nil {
+		if err := SendMetric(config.UpdateMetricAddress, config.StorageMetrics); err != nil {
+			continue
+		}
+
+		if err := SendMetrics(config.UpdateMetricsAddress, config.StorageMetrics); err != nil {
 			continue
 		}
 

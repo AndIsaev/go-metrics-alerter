@@ -11,4 +11,5 @@ type BaseStorage interface {
 	Close(ctx context.Context) error
 	Insert(ctx context.Context, metrics common.Metrics) error
 	Create(ctx context.Context) error
+	InsertBatch(ctx context.Context, metrics []common.Metrics) error
 }

@@ -84,3 +84,31 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storag
 		w.Write(result)
 	}
 }
+
+func UpdateBatchHandler(conn storage.BaseStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		metrics := make([]common.Metrics, 0, 100)
+
+		w.Header().Set("Content-Type", "application/json")
+
+		if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// save metrics to file
+		if conn != nil {
+			err := conn.InsertBatch(context.Background(), metrics)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		}
+
+		body := common.Response{Message: "success"}
+		response, _ := easyjson.Marshal(body)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
+	}
+}

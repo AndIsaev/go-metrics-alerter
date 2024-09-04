@@ -60,12 +60,13 @@ func NewServerConfig() *ServerConfig {
 }
 
 type AgentConfig struct {
-	Address             string        `env:"ADDRESS"`
-	ReportInterval      time.Duration `env:"REPORT_INTERVAL"`
-	PollInterval        time.Duration `env:"POLL_INTERVAL"`
-	StorageMetrics      *metrics.StorageMetrics
-	UpdateMetricAddress string
-	ProtocolHTTP        string
+	Address              string        `env:"ADDRESS"`
+	ReportInterval       time.Duration `env:"REPORT_INTERVAL"`
+	PollInterval         time.Duration `env:"POLL_INTERVAL"`
+	StorageMetrics       *metrics.StorageMetrics
+	UpdateMetricAddress  string
+	UpdateMetricsAddress string
+	ProtocolHTTP         string
 }
 
 func NewAgentConfig() *AgentConfig {
@@ -100,6 +101,7 @@ func NewAgentConfig() *AgentConfig {
 	}
 	// set address for update metric
 	cfg.UpdateMetricAddress = fmt.Sprintf("%s://%s/update/", cfg.ProtocolHTTP, cfg.Address)
+	cfg.UpdateMetricsAddress = fmt.Sprintf("%s://%s/updates/", cfg.ProtocolHTTP, cfg.Address)
 
 	return cfg
 }
