@@ -31,8 +31,10 @@ func (s *PostgresStorage) Ping(ctx context.Context) error {
 }
 
 func (s *PostgresStorage) Insert(ctx context.Context, m common.Metrics) error {
-	query := `insert into metric (id, type, delta, value)
-				values ($1, $2, $3, $4)`
+	query := `insert into metric (id, type, delta, value) 
+				values ($1, $2, $3, $4) on CONFLICT (id) 
+				do update set delta = metric.delta + $3, value = $4;`
+
 	_, err := s.Conn.Exec(ctx, query, m.ID, m.MType, m.Delta, m.Value)
 	if err != nil {
 		return err
