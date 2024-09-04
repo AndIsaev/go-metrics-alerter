@@ -2,8 +2,9 @@ package storage
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
 	"log"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )

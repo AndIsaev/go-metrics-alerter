@@ -77,6 +77,20 @@ func (mr *MockBaseStorageMockRecorder) Insert(ctx, metrics interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockBaseStorage)(nil).Insert), ctx, metrics)
 }
 
+// InsertBatch mocks base method.
+func (m *MockBaseStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertBatch", ctx, metrics)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertBatch indicates an expected call of InsertBatch.
+func (mr *MockBaseStorageMockRecorder) InsertBatch(ctx, metrics interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBatch", reflect.TypeOf((*MockBaseStorage)(nil).InsertBatch), ctx, metrics)
+}
+
 // Ping mocks base method.
 func (m *MockBaseStorage) Ping(ctx context.Context) error {
 	m.ctrl.T.Helper()
