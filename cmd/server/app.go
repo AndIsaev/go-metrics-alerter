@@ -59,12 +59,12 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		a.DBConn = conn
 
 		// создаем таблицы
-		if err := a.DBConn.Create(ctx); err != nil {
+		if err := conn.Create(ctx); err != nil {
 			return err
 		}
+		a.DBConn = conn
 	}
 
 	// create directory
@@ -78,7 +78,9 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 	}
 
 	// download metrics from disc to storage
-	a.downloadMetrics()
+	if err := a.downloadMetrics(); err != nil {
+		return err
+	}
 
 	// init router
 	a.initRouter()
@@ -104,7 +106,7 @@ func (a *ServerApp) initHTTPServer() {
 }
 
 // downloadMetrics - Read metrics from disk
-func (a *ServerApp) downloadMetrics() {
+func (a *ServerApp) downloadMetrics() error {
 	if a.Config.Restore {
 		log.Println("read metrics from disk")
 		for {
@@ -112,10 +114,14 @@ func (a *ServerApp) downloadMetrics() {
 			if err != nil {
 				break
 			}
-			a.MemStorage.Set(m)
+			if err := a.MemStorage.Set(m); err != nil {
+				log.Printf("can't save metrics to local storage because of: %s\n", err.Error())
+				return err
+			}
 		}
 		log.Println("metrics downloaded")
 	}
+	return nil
 }
 
 // createMetricsDir - create directory for metrics

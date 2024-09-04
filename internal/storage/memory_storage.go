@@ -87,16 +87,17 @@ func (ms *MemStorage) GetMetric(MType, ID string) (common.Metrics, error) {
 	return metric, ErrKeyErrorStorage
 }
 
-func (ms *MemStorage) Set(metric *common.Metrics) {
+// Set - insert new value or update exists values
+func (ms *MemStorage) Set(metric *common.Metrics) error {
 	switch metric.MType {
 	case common.Counter:
 
 		if value, ok := ms.Metrics[metric.ID]; !ok {
 			ms.Metrics[metric.ID] = *metric.Delta
 		} else {
-			v, e := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
-			if e != nil {
-				return
+			v, err := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			if err != nil {
+				return err
 			}
 
 			ms.Metrics[metric.ID] = *metric.Delta + v
@@ -105,6 +106,7 @@ func (ms *MemStorage) Set(metric *common.Metrics) {
 	case common.Gauge:
 		ms.Metrics[metric.ID] = *metric.Value
 	}
+	return nil
 }
 
 func (ms *MemStorage) GetMetricByName(metricName string) (interface{}, error) {
