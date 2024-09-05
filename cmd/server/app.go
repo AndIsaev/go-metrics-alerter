@@ -133,11 +133,13 @@ func createMetricsDir(fileStoragePath string) error {
 }
 
 func (a *ServerApp) Shutdown(ctx context.Context) {
-	if err := a.FileProducer.Close(); err != nil {
-		log.Printf("%s\n", err.Error())
-	}
-	if err := a.FileConsumer.Close(); err != nil {
-		log.Printf("%s\n", err.Error())
+	if a.Config.FileStoragePath != "" {
+		if err := a.FileProducer.Close(); err != nil {
+			log.Printf("%s\n", err.Error())
+		}
+		if err := a.FileConsumer.Close(); err != nil {
+			log.Printf("%s\n", err.Error())
+		}
 	}
 
 	if a.Config.DBDsn != "" {
