@@ -100,7 +100,7 @@ func (a *TestServerApp) initRouter() {
 
 		// value
 		r.Get(`/value/{MetricType}/{MetricName}`, GetMetricHandler(a.MemStorage))
-		r.Post(`/value`, GetHandler(a.MemStorage))
+		r.Post(`/value`, GetHandler(a.MemStorage, a.DBConn))
 
 		// main page
 		r.Get(`/`, MainPageHandler(a.MemStorage))

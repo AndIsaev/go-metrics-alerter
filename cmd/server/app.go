@@ -188,7 +188,7 @@ func (a *ServerApp) initRouter() {
 
 		// value
 		r.Get(`/value/{MetricType}/{MetricName}`, handlers.GetMetricHandler(a.MemStorage))
-		r.Post(`/value`, handlers.GetHandler(a.MemStorage))
+		r.Post(`/value`, handlers.GetHandler(a.MemStorage, a.DBConn))
 
 		// main page
 		r.Get(`/`, handlers.MainPageHandler(a.MemStorage))

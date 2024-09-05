@@ -63,18 +63,33 @@ func (mr *MockBaseStorageMockRecorder) Create(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockBaseStorage)(nil).Create), ctx)
 }
 
-// Insert mocks base method.
-func (m *MockBaseStorage) Insert(ctx context.Context, metrics common.Metrics) error {
+// Get mocks base method.
+func (m *MockBaseStorage) Get(ctx context.Context, metric common.Metrics) (*common.Metrics, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, metrics)
+	ret := m.ctrl.Call(m, "Get", ctx, metric)
+	ret0, _ := ret[0].(*common.Metrics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockBaseStorageMockRecorder) Get(ctx, metric interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockBaseStorage)(nil).Get), ctx, metric)
+}
+
+// Insert mocks base method.
+func (m *MockBaseStorage) Insert(ctx context.Context, metric common.Metrics) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Insert", ctx, metric)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Insert indicates an expected call of Insert.
-func (mr *MockBaseStorageMockRecorder) Insert(ctx, metrics interface{}) *gomock.Call {
+func (mr *MockBaseStorageMockRecorder) Insert(ctx, metric interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockBaseStorage)(nil).Insert), ctx, metrics)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockBaseStorage)(nil).Insert), ctx, metric)
 }
 
 // InsertBatch mocks base method.

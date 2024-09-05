@@ -42,6 +42,20 @@ func (s *PostgresStorage) Insert(ctx context.Context, m common.Metrics) error {
 	return nil
 }
 
+func (s *PostgresStorage) Get(ctx context.Context, m common.Metrics) (*common.Metrics, error) {
+	result := new(common.Metrics)
+
+	query := `select * from metric where id = $1 and "type" = $2;`
+
+	row := s.Conn.QueryRow(ctx, query, m.ID, m.MType)
+
+	if err := row.Scan(&result.ID, &result.MType, &result.Delta, &result.Value); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (s *PostgresStorage) Close(ctx context.Context) error {
 	err := s.Conn.Close(ctx)
 	return err
