@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -97,9 +96,6 @@ func UpdateBatchHandler(conn storage.BaseStorage) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fmt.Println("=====")
-		log.Println(metrics)
-		fmt.Println("=====")
 
 		// save metrics to file
 		if conn != nil {
