@@ -51,7 +51,7 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 
 	if a.Config.DBDsn != "" {
 		// connect to DB
-		conn, err := storage.NewPostgresStorage(ctx, a.Config.DBDsn)
+		conn, err := storage.NewPostgresStorage(a.Config.DBDsn)
 		if err != nil {
 			return err
 		}
@@ -133,18 +133,16 @@ func createMetricsDir(fileStoragePath string) error {
 }
 
 func (a *ServerApp) Shutdown(ctx context.Context) {
-	if a.Config.FileStoragePath != "" {
-		if err := a.FileProducer.Close(); err != nil {
-			log.Printf("%s\n", err.Error())
-		}
-		if err := a.FileConsumer.Close(); err != nil {
-			log.Printf("%s\n", err.Error())
-		}
+	if err := a.FileProducer.Close(); err != nil {
+		log.Printf("%s\n", err.Error())
+	}
+	if err := a.FileConsumer.Close(); err != nil {
+		log.Printf("%s\n", err.Error())
 	}
 
 	if a.Config.DBDsn != "" {
 		if a.DBConn != nil {
-			if err := a.DBConn.Close(ctx); err != nil {
+			if err := a.DBConn.Close(); err != nil {
 				log.Printf("%s\n", err.Error())
 			}
 		}

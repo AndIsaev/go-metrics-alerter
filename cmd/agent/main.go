@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -44,6 +45,9 @@ func SendMetrics(url string, storage *metrics.StorageMetrics) error {
 	if err := client.SendMetricsHandler(c, url, values); err != nil {
 		return err
 	}
+	fmt.Println("=====")
+	log.Println(values)
+	fmt.Println("=====")
 	return nil
 }
 

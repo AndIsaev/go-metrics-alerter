@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
@@ -12,7 +11,7 @@ func PingHandler(DBConn storage.BaseStorage) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Content-Encoding", "gzip")
 
-		err := DBConn.Ping(context.Background())
+		err := DBConn.Ping()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

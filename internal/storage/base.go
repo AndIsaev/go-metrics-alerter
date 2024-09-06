@@ -7,8 +7,8 @@ import (
 )
 
 type BaseStorage interface {
-	Ping(ctx context.Context) error
-	Close(ctx context.Context) error
+	Ping() error
+	Close() error
 	Insert(ctx context.Context, metric common.Metrics) error
 	Create(ctx context.Context) error
 	InsertBatch(ctx context.Context, metrics []common.Metrics) error

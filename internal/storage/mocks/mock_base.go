@@ -36,17 +36,17 @@ func (m *MockBaseStorage) EXPECT() *MockBaseStorageMockRecorder {
 }
 
 // Close mocks base method.
-func (m *MockBaseStorage) Close(ctx context.Context) error {
+func (m *MockBaseStorage) Close() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close", ctx)
+	ret := m.ctrl.Call(m, "Close")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Close indicates an expected call of Close.
-func (mr *MockBaseStorageMockRecorder) Close(ctx interface{}) *gomock.Call {
+func (mr *MockBaseStorageMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockBaseStorage)(nil).Close), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockBaseStorage)(nil).Close))
 }
 
 // Create mocks base method.
@@ -107,15 +107,15 @@ func (mr *MockBaseStorageMockRecorder) InsertBatch(ctx, metrics interface{}) *go
 }
 
 // Ping mocks base method.
-func (m *MockBaseStorage) Ping(ctx context.Context) error {
+func (m *MockBaseStorage) Ping() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ping", ctx)
+	ret := m.ctrl.Call(m, "Ping")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Ping indicates an expected call of Ping.
-func (mr *MockBaseStorageMockRecorder) Ping(ctx interface{}) *gomock.Call {
+func (mr *MockBaseStorageMockRecorder) Ping() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockBaseStorage)(nil).Ping), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockBaseStorage)(nil).Ping))
 }
