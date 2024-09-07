@@ -35,7 +35,7 @@ func SendMetric(url string, db *metrics.StorageMetrics) error {
 }
 
 func SendMetrics(url string, db *metrics.StorageMetrics) error {
-	c := resty.New().SetTimeout(time.Second * 1)
+	c := resty.New().SetTimeout(time.Second * 5)
 	c.OnBeforeRequest(middleware.GzipRequestMiddleware)
 	values := make([]common.Metrics, 0, 100)
 
