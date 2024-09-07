@@ -27,12 +27,21 @@ func NewProducer(path string) (*Producer, error) {
 	}, nil
 }
 
-func (p *Producer) WriteMetrics(metrics *common.Metrics) error {
+func (p *Producer) Insert(metrics *common.Metrics) error {
 	return p.encoder.Encode(&metrics)
 }
 
 func (p *Producer) Close() error {
 	return p.file.Close()
+}
+
+func (p *Producer) InsertBatch(metrics *[]common.Metrics) error {
+	for _, m := range *metrics {
+		if err := p.Insert(&m); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+	}
+	return nil
 }
 
 type Consumer struct {

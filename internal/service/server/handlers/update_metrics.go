@@ -3,7 +3,8 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -69,7 +70,7 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storag
 		}
 
 		if producer != nil {
-			if err := server.SaveMetricsOnFile(producer, metrics); err != nil {
+			if err := producer.Insert(&metrics); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -86,7 +87,7 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storag
 	}
 }
 
-func UpdateBatchHandler(conn storage.BaseStorage) http.HandlerFunc {
+func UpdateBatchHandler(mem *storage.MemStorage, producer *file.Producer, conn storage.BaseStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metrics := make([]common.Metrics, 0, 100)
 
@@ -99,12 +100,23 @@ func UpdateBatchHandler(conn storage.BaseStorage) http.HandlerFunc {
 
 		// save metrics to file
 		if conn != nil {
-			err := conn.InsertBatch(context.Background(), metrics)
-			fmt.Println(err)
+			err := conn.InsertBatch(context.Background(), &metrics)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
+		}
+
+		if producer != nil {
+			if err := producer.InsertBatch(&metrics); err != nil {
+				log.Println(errors.Unwrap(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+		// save new metrics to DB
+		if err := mem.InsertBatch(&metrics); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 
 		body := common.Response{Message: "success"}

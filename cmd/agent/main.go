@@ -20,20 +20,6 @@ func runPullReport(metrics *metrics.StorageMetrics) {
 	metrics.Pull()
 }
 
-func SendMetric(url string, db *metrics.StorageMetrics) error {
-	c := resty.New()
-	c.OnBeforeRequest(middleware.GzipRequestMiddleware)
-
-	for _, v := range db.Metrics {
-		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: v.Value, Delta: v.Delta}
-		err := client.SendMetricHandler(c, url, metric)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func SendMetrics(url string, db *metrics.StorageMetrics) error {
 	c := resty.New().SetTimeout(time.Second * 5)
 	c.OnBeforeRequest(middleware.GzipRequestMiddleware)
@@ -58,10 +44,6 @@ func main() {
 		runPullReport(config.StorageMetrics)
 
 		time.Sleep(config.PollInterval)
-
-		//if err := utils.Retry(SendMetric)(config.UpdateMetricAddress, config.StorageMetrics); err != nil {
-		//	log.Fatalln("original error -", errors.Unwrap(err))
-		//}
 
 		if err := utils.Retry(SendMetrics)(config.UpdateMetricsAddress, config.StorageMetrics); err != nil {
 			log.Fatalln("original error -", errors.Unwrap(err))

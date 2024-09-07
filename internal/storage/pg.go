@@ -73,8 +73,8 @@ func (s *PostgresStorage) Create(ctx context.Context) error {
 	return nil
 }
 
-func (s *PostgresStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) error {
-	if len(metrics) == 0 {
+func (s *PostgresStorage) InsertBatch(ctx context.Context, metrics *[]common.Metrics) error {
+	if metrics == nil {
 		return nil
 	}
 	tx, err := s.DB.Begin()
@@ -86,7 +86,7 @@ func (s *PostgresStorage) InsertBatch(ctx context.Context, metrics []common.Metr
 				values ($1, $2, $3, $4) on conflict (id) 
 				do update set delta = metric.delta + $3, value = $4;`
 
-	for _, m := range metrics {
+	for _, m := range *metrics {
 		if _, err := tx.ExecContext(ctx, query, m.ID, m.MType, m.Delta, m.Value); err != nil {
 			tx.Rollback()
 			return fmt.Errorf("%w", err)

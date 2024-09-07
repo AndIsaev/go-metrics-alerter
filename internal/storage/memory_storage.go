@@ -116,3 +116,12 @@ func (ms *MemStorage) GetMetricByName(metricName string) (interface{}, error) {
 	}
 	return val, nil
 }
+
+func (ms *MemStorage) InsertBatch(metrics *[]common.Metrics) error {
+	for _, m := range *metrics {
+		if err := ms.Set(&m); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+	}
+	return nil
+}

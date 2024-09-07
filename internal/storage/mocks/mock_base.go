@@ -93,7 +93,7 @@ func (mr *MockBaseStorageMockRecorder) Insert(ctx, metric interface{}) *gomock.C
 }
 
 // InsertBatch mocks base method.
-func (m *MockBaseStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) error {
+func (m *MockBaseStorage) InsertBatch(ctx context.Context, metrics *[]common.Metrics) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertBatch", ctx, metrics)
 	ret0, _ := ret[0].(error)
