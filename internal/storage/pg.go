@@ -17,7 +17,7 @@ type PostgresStorage struct {
 func NewPostgresStorage(connString string) (*PostgresStorage, error) {
 	conn, err := sqlx.Connect("postgres", connString)
 	if err != nil {
-		return nil, fmt.Errorf("%w\n", err)
+		return nil, fmt.Errorf("%w", err)
 	}
 	return &PostgresStorage{DB: conn}, nil
 }
@@ -25,7 +25,7 @@ func NewPostgresStorage(connString string) (*PostgresStorage, error) {
 func (s *PostgresStorage) Ping() error {
 	err := s.DB.Ping()
 	if err != nil {
-		return fmt.Errorf("%w\n", err)
+		return fmt.Errorf("%w", err)
 	}
 	return nil
 }
@@ -37,7 +37,7 @@ func (s *PostgresStorage) Insert(ctx context.Context, m common.Metrics) error {
 
 	_, err := s.DB.ExecContext(ctx, query, m.ID, m.MType, m.Delta, m.Value)
 	if err != nil {
-		return fmt.Errorf("%w\n", err)
+		return fmt.Errorf("%w", err)
 	}
 	return nil
 }
@@ -48,7 +48,7 @@ func (s *PostgresStorage) Get(ctx context.Context, m common.Metrics) (*common.Me
 	query := `select * from metric where id = $1 and "type" = $2;`
 
 	if err := s.DB.GetContext(ctx, &result, query, m.ID, m.MType); err != nil {
-		return nil, fmt.Errorf("%w\n", err)
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	return &result, nil
@@ -56,7 +56,7 @@ func (s *PostgresStorage) Get(ctx context.Context, m common.Metrics) (*common.Me
 
 func (s *PostgresStorage) Close() error {
 	err := s.DB.Close()
-	return fmt.Errorf("%w\n", err)
+	return fmt.Errorf("%w", err)
 }
 
 func (s *PostgresStorage) Create(ctx context.Context) error {
@@ -68,7 +68,7 @@ func (s *PostgresStorage) Create(ctx context.Context) error {
 
 	_, err := s.DB.ExecContext(ctx, queryMetricTable)
 	if err != nil {
-		return fmt.Errorf("%w\n", err)
+		return fmt.Errorf("%w", err)
 	}
 	return nil
 }
@@ -79,7 +79,7 @@ func (s *PostgresStorage) InsertBatch(ctx context.Context, metrics []common.Metr
 	}
 	tx, err := s.DB.Begin()
 	if err != nil {
-		return fmt.Errorf("%w\n", err)
+		return fmt.Errorf("%w", err)
 	}
 
 	query := `insert into metric (id, type, delta, value) 
@@ -89,7 +89,7 @@ func (s *PostgresStorage) InsertBatch(ctx context.Context, metrics []common.Metr
 	for _, m := range metrics {
 		if _, err := tx.ExecContext(ctx, query, m.ID, m.MType, m.Delta, m.Value); err != nil {
 			tx.Rollback()
-			return fmt.Errorf("%w\n", err)
+			return fmt.Errorf("%w", err)
 		}
 	}
 	return tx.Commit()
