@@ -27,7 +27,7 @@ func NewMemStorage() *MemStorage {
 
 func (metric *MetricValue) setValue(metricType string, value interface{}) error {
 	if value == nil {
-		return ErrIncorrectMetricValue
+		return fmt.Errorf("%w\n", ErrMetricValue)
 	}
 
 	switch v := value.(type) {
@@ -43,13 +43,13 @@ func (metric *MetricValue) setValue(metricType string, value interface{}) error 
 			return nil
 		}
 	}
-	return ErrIncorrectMetricValue
+	return fmt.Errorf("%w\n", ErrMetricValue)
 }
 
 func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}) error {
 	newMetricValue := &MetricValue{}
 	if err := newMetricValue.setValue(metricType, metricValue); err != nil {
-		return ErrIncorrectMetricValue
+		return fmt.Errorf("%w\n", err)
 	}
 
 	switch metricType {
@@ -65,7 +65,7 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 		ms.Metrics[metricName] = metricValue
 		return nil
 	}
-	return ErrIncorrectMetricValue
+	return fmt.Errorf("%w\n", ErrMetricValue)
 }
 
 func (ms *MemStorage) GetMetric(MType, ID string) (common.Metrics, error) {
@@ -84,7 +84,7 @@ func (ms *MemStorage) GetMetric(MType, ID string) (common.Metrics, error) {
 		}
 	}
 
-	return metric, ErrKeyErrorStorage
+	return metric, fmt.Errorf("%w\n", ErrKeyStorage)
 }
 
 // Set - insert new value or update exists values
@@ -112,7 +112,7 @@ func (ms *MemStorage) Set(metric *common.Metrics) error {
 func (ms *MemStorage) GetMetricByName(metricName string) (interface{}, error) {
 	val, ok := ms.Metrics[metricName]
 	if !ok {
-		return nil, ErrKeyErrorStorage
+		return nil, fmt.Errorf("%w\n", ErrKeyStorage)
 	}
 	return val, nil
 }

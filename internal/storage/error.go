@@ -2,5 +2,5 @@ package storage
 
 import "errors"
 
-var ErrIncorrectMetricValue = errors.New("incorrect value for metric")
-var ErrKeyErrorStorage = errors.New("data not found")
+var ErrMetricValue = errors.New("incorrect value for metric")
+var ErrKeyStorage = errors.New("data not found")

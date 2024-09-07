@@ -1,17 +1,14 @@
-package handlers
+package tests
 
 import (
 	"net/http"
+	"testing"
 
 	"github.com/golang/mock/gomock"
-
-	mock "github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-
-	"testing"
+	mock "github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
 )
 
 func TestUpdateMetricHandler(t *testing.T) {
@@ -166,7 +163,7 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 			// создаём новый Recorder
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.response, body)
-			assert.Error(t, storage.ErrIncorrectMetricValue)
+			assert.Error(t, storage.ErrMetricValue)
 			assert.Nil(t, testApp.MemStorage.Metrics[tt.want.key])
 
 			switch tt.name {

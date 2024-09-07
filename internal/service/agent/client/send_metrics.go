@@ -39,11 +39,11 @@ func SendMetricsHandler(client *resty.Client, url string, body []common.Metrics)
 		Post(url)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("%w\n", err)
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", res.StatusCode())
+		return fmt.Errorf("%w\n", err)
 	}
 
 	return nil

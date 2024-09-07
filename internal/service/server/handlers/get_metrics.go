@@ -3,7 +3,9 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -40,6 +42,7 @@ func GetHandler(m *storage.MemStorage, conn storage.BaseStorage) http.HandlerFun
 		w.Header().Set("Content-Type", "application/json")
 
 		if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
+			log.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -52,6 +55,7 @@ func GetHandler(m *storage.MemStorage, conn storage.BaseStorage) http.HandlerFun
 		if conn != nil {
 			val, err := conn.Get(context.Background(), metric)
 			if err != nil {
+				log.Println(errors.Unwrap(err))
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
@@ -59,6 +63,7 @@ func GetHandler(m *storage.MemStorage, conn storage.BaseStorage) http.HandlerFun
 		} else {
 			val, err := m.GetMetric(metric.MType, metric.ID)
 			if err != nil {
+				log.Println(errors.Unwrap(err))
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}

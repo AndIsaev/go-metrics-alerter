@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -18,8 +17,7 @@ type PostgresStorage struct {
 func NewPostgresStorage(connString string) (*PostgresStorage, error) {
 	conn, err := sqlx.Connect("postgres", connString)
 	if err != nil {
-		log.Printf("unable to connect to database: %s\n", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("%w\n", err)
 	}
 	return &PostgresStorage{DB: conn}, nil
 }
@@ -27,7 +25,7 @@ func NewPostgresStorage(connString string) (*PostgresStorage, error) {
 func (s *PostgresStorage) Ping() error {
 	err := s.DB.Ping()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w\n", err)
 	}
 	return nil
 }
@@ -39,7 +37,7 @@ func (s *PostgresStorage) Insert(ctx context.Context, m common.Metrics) error {
 
 	_, err := s.DB.ExecContext(ctx, query, m.ID, m.MType, m.Delta, m.Value)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w\n", err)
 	}
 	return nil
 }
@@ -50,8 +48,7 @@ func (s *PostgresStorage) Get(ctx context.Context, m common.Metrics) (*common.Me
 	query := `select * from metric where id = $1 and "type" = $2;`
 
 	if err := s.DB.GetContext(ctx, &result, query, m.ID, m.MType); err != nil {
-		fmt.Println(err)
-		return nil, err
+		return nil, fmt.Errorf("%w\n", err)
 	}
 
 	return &result, nil
@@ -59,7 +56,7 @@ func (s *PostgresStorage) Get(ctx context.Context, m common.Metrics) (*common.Me
 
 func (s *PostgresStorage) Close() error {
 	err := s.DB.Close()
-	return err
+	return fmt.Errorf("%w\n", err)
 }
 
 func (s *PostgresStorage) Create(ctx context.Context) error {
@@ -71,8 +68,7 @@ func (s *PostgresStorage) Create(ctx context.Context) error {
 
 	_, err := s.DB.ExecContext(ctx, queryMetricTable)
 	if err != nil {
-		log.Printf("can't execute query because of %s\n", err.Error())
-		return err
+		return fmt.Errorf("%w\n", err)
 	}
 	return nil
 }
@@ -83,7 +79,7 @@ func (s *PostgresStorage) InsertBatch(ctx context.Context, metrics []common.Metr
 	}
 	tx, err := s.DB.Begin()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w\n", err)
 	}
 
 	query := `insert into metric (id, type, delta, value) 
@@ -91,14 +87,10 @@ func (s *PostgresStorage) InsertBatch(ctx context.Context, metrics []common.Metr
 				do update set delta = metric.delta + $3, value = $4;`
 
 	for _, m := range metrics {
-		// все изменения записываются в транзакцию
 		if _, err := tx.ExecContext(ctx, query, m.ID, m.MType, m.Delta, m.Value); err != nil {
-			// если ошибка, то откатываем изменения
-
 			tx.Rollback()
-			return err
+			return fmt.Errorf("%w\n", err)
 		}
 	}
-	// завершаем транзакцию
 	return tx.Commit()
 }

@@ -1,10 +1,12 @@
-package handlers
+package tests
 
 import (
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -92,17 +94,17 @@ func (a *TestServerApp) initRouter() {
 		r.Use(mid.GzipMiddleware)
 
 		// Ping db connection
-		r.Get(`/ping`, PingHandler(a.DBConn))
+		r.Get(`/ping`, handlers.PingHandler(a.DBConn))
 
 		// update
-		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, SetMetricHandler(a.MemStorage))
-		r.Post(`/update`, UpdateHandler(a.MemStorage, a.FileProducer, a.DBConn))
+		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, handlers.SetMetricHandler(a.MemStorage))
+		r.Post(`/update`, handlers.UpdateHandler(a.MemStorage, a.FileProducer, a.DBConn))
 
 		// value
-		r.Get(`/value/{MetricType}/{MetricName}`, GetMetricHandler(a.MemStorage))
-		r.Post(`/value`, GetHandler(a.MemStorage, a.DBConn))
+		r.Get(`/value/{MetricType}/{MetricName}`, handlers.GetMetricHandler(a.MemStorage))
+		r.Post(`/value`, handlers.GetHandler(a.MemStorage, a.DBConn))
 
 		// main page
-		r.Get(`/`, MainPageHandler(a.MemStorage))
+		r.Get(`/`, handlers.MainPageHandler(a.MemStorage))
 	})
 }

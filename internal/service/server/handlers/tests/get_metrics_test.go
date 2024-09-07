@@ -1,17 +1,15 @@
-package handlers
+package tests
 
 import (
 	"fmt"
 	"net/http"
 	"testing"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-
 	"github.com/golang/mock/gomock"
-
-	mock "github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
+	mock "github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
 )
 
 func TestGetMetricHandler(t *testing.T) {
@@ -41,7 +39,7 @@ func TestGetMetricHandler(t *testing.T) {
 			name: "test #1 - if key not found",
 			want: want{
 				code:     http.StatusNotFound,
-				response: fmt.Sprintf("%v\n", storage.ErrKeyErrorStorage.Error()),
+				response: fmt.Sprintf("%v\n", storage.ErrKeyStorage.Error()),
 				address:  "/value/gauge/Alloc",
 				key:      "Alloc",
 				method:   http.MethodGet,
