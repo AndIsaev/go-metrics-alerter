@@ -29,8 +29,8 @@ func SendMetricHandler(client *resty.Client, url string, body common.Metrics) er
 	return nil
 }
 
-func SendMetricsHandler(client *resty.Client, url string, body []common.Metrics) error {
-	var result []common.Metrics
+func SendMetricsHandler(client *resty.Client, url string, body *[]common.Metrics) error {
+	var result common.Metrics
 
 	res, err := client.R().
 		SetHeader("Content-Type", "application/json").

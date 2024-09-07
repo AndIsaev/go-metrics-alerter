@@ -44,7 +44,7 @@ func SendMetrics(url string, db *metrics.StorageMetrics) error {
 		values = append(values, metric)
 	}
 
-	if err := client.SendMetricsHandler(c, url, values); err != nil {
+	if err := client.SendMetricsHandler(c, url, &values); err != nil {
 		return errors.Unwrap(err)
 	}
 
