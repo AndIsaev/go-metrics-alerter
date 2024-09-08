@@ -33,18 +33,3 @@ func DefineMetricValue(MetricType string, MetricValue string) (interface{}, erro
 	err := fmt.Sprintf("incorrect value for %v type", MetricType)
 	return nil, errors.New(err)
 }
-
-//func SaveMetricsOnFile(producer *file.Producer, metrics *[]common.Metrics) error {
-//	for _, m := range *metrics {
-//		if _, err := tx.ExecContext(ctx, query, m.ID, m.MType, m.Delta, m.Value); err != nil {
-//			tx.Rollback()
-//			return fmt.Errorf("%w", err)
-//		}
-//	}
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//}
