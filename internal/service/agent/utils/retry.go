@@ -19,7 +19,7 @@ func Retry(fn Object) Object {
 		err = fn(url, db)
 
 		if err != nil {
-			for attempt := 3; attempt > 0; attempt-- {
+			for attempt := 1; attempt < 4; attempt++ {
 				if err = fn(url, db); err != nil {
 					log.Printf("attempt - %d; sleep - %v seconds\n", attempt, sleep)
 					time.Sleep(sleep)
