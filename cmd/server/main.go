@@ -11,7 +11,7 @@ func main() {
 	err := app.StartApp(ctx)
 
 	defer func() {
-		app.Shutdown(ctx)
+		app.Shutdown()
 		if err != nil {
 			log.Fatalf("close process with error: %s\n", err.Error())
 		}

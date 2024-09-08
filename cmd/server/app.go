@@ -132,7 +132,7 @@ func createMetricsDir(fileStoragePath string) error {
 	return nil
 }
 
-func (a *ServerApp) Shutdown(ctx context.Context) {
+func (a *ServerApp) Shutdown() {
 	if err := a.FileProducer.Close(); err != nil {
 		log.Printf("%s\n", err.Error())
 	}
