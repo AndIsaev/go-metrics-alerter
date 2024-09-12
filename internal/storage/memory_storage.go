@@ -68,23 +68,29 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 	return fmt.Errorf("%w", ErrMetricValue)
 }
 
-func (ms *MemStorage) GetMetric(MType, ID string) (common.Metrics, error) {
+func (ms *MemStorage) GetMetric(MType, ID string) (*common.Metrics, error) {
 	metric := common.Metrics{ID: ID, MType: MType}
 
 	if value, ok := ms.Metrics[ID]; ok {
 		switch MType {
 		case common.Counter:
-			val, _ := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			val, err := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			if err != nil {
+				return nil, err
+			}
 			metric.Delta = &val
-			return metric, nil
+			return &metric, nil
 		case common.Gauge:
-			val, _ := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
+			val, err := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
+			if err != nil {
+				return nil, err
+			}
 			metric.Value = &val
-			return metric, nil
+			return &metric, nil
 		}
 	}
 
-	return metric, fmt.Errorf("%w", ErrKeyStorage)
+	return nil, fmt.Errorf("%w", ErrKeyStorage)
 }
 
 // Set - insert new value or update exists values

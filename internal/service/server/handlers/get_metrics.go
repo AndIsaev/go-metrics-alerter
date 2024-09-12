@@ -67,10 +67,14 @@ func GetHandler(m *storage.MemStorage, conn storage.BaseStorage) http.HandlerFun
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
-			metric = val
+			metric = *val
 		}
 
-		response, _ := easyjson.Marshal(metric)
+		response, err := easyjson.Marshal(metric)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
