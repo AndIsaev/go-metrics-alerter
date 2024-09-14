@@ -1,11 +1,12 @@
 package tests
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
 

@@ -3,10 +3,11 @@ package agent
 import (
 	"flag"
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 )
 
 type Config struct {

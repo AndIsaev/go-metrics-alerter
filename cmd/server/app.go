@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"

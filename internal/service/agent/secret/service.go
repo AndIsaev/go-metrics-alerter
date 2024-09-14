@@ -6,7 +6,6 @@ import (
 )
 
 func GetHash(key []byte) {
-
 	fmt.Println(key)
 
 	// создаём новый hash.Hash, вычисляющий контрольную сумму SHA-256
