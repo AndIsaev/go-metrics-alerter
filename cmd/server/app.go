@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"log"
 	"net/http"
 	"os"
@@ -13,7 +14,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
 	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
 	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
@@ -26,14 +26,14 @@ type ServerApp struct {
 	FileProducer *file.Producer
 	FileConsumer *file.Consumer
 	DBConn       storage.BaseStorage
-	Config       *service.ServerConfig
+	Config       *server.Config
 	Server       *http.Server
 }
 
 // New - create new app
 func New() *ServerApp {
 	app := &ServerApp{}
-	config := service.NewServerConfig()
+	config := server.NewConfig()
 	app.Config = config
 
 	// init file storage

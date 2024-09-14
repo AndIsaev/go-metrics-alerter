@@ -8,7 +8,7 @@ import (
 	"github.com/go-resty/resty/v2"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
@@ -38,7 +38,7 @@ func SendMetrics(url string, db *metrics.StorageMetrics) error {
 }
 
 func main() {
-	config := service.NewAgentConfig()
+	config := agent.NewConfig()
 	log.Println("start agent")
 	for {
 		runPullReport(config.StorageMetrics)

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -15,7 +16,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
 	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 
@@ -42,13 +42,13 @@ type TestServerApp struct {
 	FileProducer *file.Producer
 	FileConsumer *file.Consumer
 	DBConn       storage.BaseStorage
-	Config       *service.ServerConfig
+	Config       *server.Config
 	Server       *httptest.Server
 }
 
 func NewTestServerApp() *TestServerApp {
 	testApp := &TestServerApp{}
-	config := service.ServerConfig{}
+	config := server.Config{}
 	config.FileStoragePath = "./test_metrics"
 	testApp.Config = &config
 
