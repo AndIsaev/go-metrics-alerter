@@ -2,17 +2,10 @@ package main
 
 import (
 	"errors"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 	"log"
 	"time"
-
-	"github.com/go-resty/resty/v2"
-
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 )
 
 func runPullReport(metrics *metrics.StorageMetrics) {
@@ -20,35 +13,20 @@ func runPullReport(metrics *metrics.StorageMetrics) {
 	metrics.Pull()
 }
 
-func SendMetrics(url string, db *metrics.StorageMetrics) error {
-	c := resty.New().SetTimeout(time.Second * 5)
-	c.OnBeforeRequest(middleware.GzipRequestMiddleware)
-	values := make([]common.Metrics, 0, 100)
-
-	for _, v := range db.Metrics {
-		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: v.Value, Delta: v.Delta}
-		values = append(values, metric)
-	}
-
-	if err := client.SendMetricsHandler(c, url, &values); err != nil {
-		return errors.Unwrap(err)
-	}
-
-	return nil
-}
-
 func main() {
-	config := agent.NewConfig()
+	app := New()
+	app.StartApp()
+
 	log.Println("start agent")
 	for {
-		runPullReport(config.StorageMetrics)
+		runPullReport(app.Config.StorageMetrics)
 
-		time.Sleep(config.PollInterval)
+		time.Sleep(app.Config.PollInterval)
 
-		if err := utils.Retry(SendMetrics)(config.UpdateMetricsAddress, config.StorageMetrics); err != nil {
+		if err := utils.Retry(app.SendMetrics)(); err != nil {
 			log.Fatalln("original error -", errors.Unwrap(err))
 		}
 
-		time.Sleep(config.ReportInterval)
+		time.Sleep(app.Config.ReportInterval)
 	}
 }
