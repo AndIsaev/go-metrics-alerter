@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -232,10 +231,8 @@ func (a *ServerApp) secretMiddleware(next http.Handler) http.Handler {
 			r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 			defer r.Body.Close()
-			fmt.Println(agentSha256sum)
 
 			serverSha256sum := common.Sha256sum(body, a.Config.Key)
-			fmt.Println(serverSha256sum)
 
 			if agentSha256sum != serverSha256sum {
 				log.Printf("compare hash is not success")
