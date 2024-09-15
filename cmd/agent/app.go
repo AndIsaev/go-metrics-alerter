@@ -76,7 +76,6 @@ func (a *AgentApp) HashMiddleware(c *resty.Client, r *resty.Request) error {
 				return err
 			}
 			sha256sum := secure.Sha256sum(v, a.Config.Key)
-			fmt.Println(sha256sum)
 			c.Header.Set("HashSHA256", sha256sum)
 		}
 	}
