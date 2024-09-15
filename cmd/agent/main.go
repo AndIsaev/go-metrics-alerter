@@ -2,10 +2,11 @@ package main
 
 import (
 	"errors"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 	"log"
 	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 )
 
 func runPullReport(metrics *metrics.StorageMetrics) {

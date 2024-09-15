@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/go-resty/resty/v2"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/secure"
-	"github.com/go-resty/resty/v2"
-	"net/http"
-	"time"
 )
 
 // AgentApp - structure of application
