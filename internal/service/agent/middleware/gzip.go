@@ -5,7 +5,7 @@ import (
 )
 
 // GzipRequestMiddleware - указывает заголовок данных в формате gzip.
-func GzipRequestMiddleware(c *resty.Client, req *resty.Request) error {
+func GzipRequestMiddleware(c *resty.Client, _ *resty.Request) error {
 	c.Header.Set("Accept-Encoding", "gzip")
 	return nil
 }

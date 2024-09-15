@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 )
 
 // IsCorrectType - check correct type for Metrics
@@ -33,13 +32,4 @@ func DefineMetricValue(MetricType string, MetricValue string) (interface{}, erro
 	}
 	err := fmt.Sprintf("incorrect value for %v type", MetricType)
 	return nil, errors.New(err)
-}
-
-func SaveMetricsOnFile(producer *file.Producer, metrics common.Metrics) error {
-	err := producer.WriteMetrics(&metrics)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -1,26 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service"
+	"context"
+	"log"
 )
 
-func run() error {
-	if err := logger.Initialize(); err != nil {
-		return err
-	}
-
-	config := service.NewServerConfig()
-
-	fmt.Println("Running server on", config.Address)
-	return http.ListenAndServe(config.Address, config.Route)
-}
-
 func main() {
-	if err := run(); err != nil {
-		fmt.Println(err)
-	}
+	app := New()
+	ctx := context.Background()
+	err := app.StartApp(ctx)
+
+	defer func() {
+		app.Shutdown()
+		if err != nil {
+			log.Fatalf("close process with error: %s\n", err.Error())
+		}
+	}()
 }

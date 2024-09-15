@@ -1,23 +1,22 @@
-package handlers
+package tests
 
 import (
 	"net/http"
+	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-
-	"net/http/httptest"
-	"testing"
+	mock "github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
 )
 
 func TestUpdateMetricHandler(t *testing.T) {
-	MS := storage.NewMemStorage()
-	fileManager, _ := file.NewProducer("./test_metrics")
-	r := ServerRouter(MS, fileManager)
+	testApp := NewTestServerApp()
+	ctrl := gomock.NewController(t)
+	testApp.DBConn = mock.NewMockBaseStorage(ctrl)
 
-	ts := httptest.NewServer(r)
+	ts := testApp.Server
 
 	type want struct {
 		code        int
@@ -78,26 +77,26 @@ func TestUpdateMetricHandler(t *testing.T) {
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			//assert.Equal(t, tt.want.response, body)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
-			assert.NotNil(t, MS.Metrics[tt.want.key])
+			assert.NotNil(t, testApp.MemStorage.Metrics[tt.want.key])
 
 			switch tt.name {
 			case "success test #1":
-				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value)
+				assert.Equal(t, testApp.MemStorage.Metrics[tt.want.key], tt.want.value)
 			case "success test #2":
-				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value.(int64))
+				assert.Equal(t, testApp.MemStorage.Metrics[tt.want.key], tt.want.value.(int64))
 			case "success test #3":
-				assert.Equal(t, MS.Metrics[tt.want.key], tt.want.value.(int64)*2)
+				assert.Equal(t, testApp.MemStorage.Metrics[tt.want.key], tt.want.value.(int64)*2)
 			}
 		})
 	}
 }
 
 func TestUpdateMetricHandlerError(t *testing.T) {
-	MS := storage.NewMemStorage()
-	fileManager, _ := file.NewProducer("./test_metrics")
-	r := ServerRouter(MS, fileManager)
+	testApp := NewTestServerApp()
+	ctrl := gomock.NewController(t)
+	testApp.DBConn = mock.NewMockBaseStorage(ctrl)
 
-	ts := httptest.NewServer(r)
+	ts := testApp.Server
 
 	type want struct {
 		code     int
@@ -164,8 +163,8 @@ func TestUpdateMetricHandlerError(t *testing.T) {
 			// создаём новый Recorder
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			assert.Equal(t, tt.want.response, body)
-			assert.Error(t, storage.ErrIncorrectMetricValue)
-			assert.Nil(t, MS.Metrics[tt.want.key])
+			assert.Error(t, storage.ErrMetricValue)
+			assert.Nil(t, testApp.MemStorage.Metrics[tt.want.key])
 
 			switch tt.name {
 			case "unsuccessful test #1":

@@ -27,7 +27,7 @@ func NewMemStorage() *MemStorage {
 
 func (metric *MetricValue) setValue(metricType string, value interface{}) error {
 	if value == nil {
-		return ErrIncorrectMetricValue
+		return fmt.Errorf("%w", ErrMetricValue)
 	}
 
 	switch v := value.(type) {
@@ -43,13 +43,13 @@ func (metric *MetricValue) setValue(metricType string, value interface{}) error 
 			return nil
 		}
 	}
-	return ErrIncorrectMetricValue
+	return fmt.Errorf("%w", ErrMetricValue)
 }
 
 func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}) error {
 	newMetricValue := &MetricValue{}
 	if err := newMetricValue.setValue(metricType, metricValue); err != nil {
-		return ErrIncorrectMetricValue
+		return fmt.Errorf("%w", err)
 	}
 
 	switch metricType {
@@ -65,38 +65,45 @@ func (ms *MemStorage) Add(metricType, metricName string, metricValue interface{}
 		ms.Metrics[metricName] = metricValue
 		return nil
 	}
-	return ErrIncorrectMetricValue
+	return fmt.Errorf("%w", ErrMetricValue)
 }
 
-func (ms *MemStorage) GetMetric(MType, ID string) (common.Metrics, error) {
+func (ms *MemStorage) GetMetric(MType, ID string) (*common.Metrics, error) {
 	metric := common.Metrics{ID: ID, MType: MType}
 
 	if value, ok := ms.Metrics[ID]; ok {
 		switch MType {
 		case common.Counter:
-			val, _ := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			val, err := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			if err != nil {
+				return nil, err
+			}
 			metric.Delta = &val
-			return metric, nil
+			return &metric, nil
 		case common.Gauge:
-			val, _ := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
+			val, err := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
+			if err != nil {
+				return nil, err
+			}
 			metric.Value = &val
-			return metric, nil
+			return &metric, nil
 		}
 	}
 
-	return metric, ErrKeyErrorStorage
+	return nil, fmt.Errorf("%w", ErrKeyStorage)
 }
 
-func (ms *MemStorage) Set(metric *common.Metrics) {
+// Set - insert new value or update exists values
+func (ms *MemStorage) Set(metric *common.Metrics) error {
 	switch metric.MType {
 	case common.Counter:
 
 		if value, ok := ms.Metrics[metric.ID]; !ok {
 			ms.Metrics[metric.ID] = *metric.Delta
 		} else {
-			v, e := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
-			if e != nil {
-				return
+			v, err := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			if err != nil {
+				return err
 			}
 
 			ms.Metrics[metric.ID] = *metric.Delta + v
@@ -105,12 +112,22 @@ func (ms *MemStorage) Set(metric *common.Metrics) {
 	case common.Gauge:
 		ms.Metrics[metric.ID] = *metric.Value
 	}
+	return nil
 }
 
 func (ms *MemStorage) GetMetricByName(metricName string) (interface{}, error) {
 	val, ok := ms.Metrics[metricName]
 	if !ok {
-		return nil, ErrKeyErrorStorage
+		return nil, fmt.Errorf("%w", ErrKeyStorage)
 	}
 	return val, nil
+}
+
+func (ms *MemStorage) InsertBatch(metrics *[]common.Metrics) error {
+	for _, m := range *metrics {
+		if err := ms.Set(&m); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+	}
+	return nil
 }

@@ -3,57 +3,49 @@ package service
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi"
-
-	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
 type ServerConfig struct {
-	Address      string `env:"ADDRESS"`
-	Route        chi.Router
-	MemStorage   *storage.MemStorage
-	FileProducer *file.Producer
-	FileConsumer *file.Consumer
-
+	Address         string        `env:"ADDRESS"`
 	StoreInterval   time.Duration `env:"STORE_INTERVAL"`
 	FileStoragePath string        `env:"FILE_STORAGE_PATH"`
 	Restore         bool          `env:"RESTORE"`
+	DBDsn           string        `env:"DATABASE_DSN"`
 }
 
 func NewServerConfig() *ServerConfig {
 	cfg := &ServerConfig{}
 	var storeInterval uint64
 	var fileStoragePath string
-
-	cfg.MemStorage = storage.NewMemStorage()
+	var dbDsn string
 
 	flag.StringVar(&cfg.Address, "a", "localhost:8080", "server address")
-	flag.BoolVar(&cfg.Restore, "r", true, "Load metrics from file")
+	flag.BoolVar(&cfg.Restore, "r", true, "load metrics from file")
 	flag.StringVar(&fileStoragePath, "f", "./metrics", "path of metrics on disk")
 	flag.Uint64Var(&storeInterval, "i", 300, "interval for save metrics on file")
+	flag.StringVar(&dbDsn, "d", "", "database dsn")
 
 	flag.Parse()
+
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		cfg.Address = envRunAddr
+	}
+
+	if envDBDsn := os.Getenv("DATABASE_DSN"); envDBDsn != "" {
+		cfg.DBDsn = envDBDsn
+	} else {
+		cfg.DBDsn = dbDsn
 	}
 
 	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {
 		cfg.FileStoragePath = envFileStoragePath
 	} else {
 		cfg.FileStoragePath = fileStoragePath
-	}
-
-	// create directory
-	if err := createDir(cfg.FileStoragePath); err != nil {
-		log.Fatal(err)
 	}
 
 	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
@@ -64,32 +56,17 @@ func NewServerConfig() *ServerConfig {
 		cfg.StoreInterval = time.Duration(storeInterval) * time.Second
 	}
 
-	// set producer and consumer for file manager
-	producer, _ := file.NewProducer(cfg.FileStoragePath)
-	consumer, _ := file.NewConsumer(cfg.FileStoragePath)
-
-	cfg.FileProducer = producer
-	cfg.FileConsumer = consumer
-
-	// set main server router
-	cfg.Route = handlers.ServerRouter(cfg.MemStorage, cfg.FileProducer)
-
-	// download metrics from disc to storage
-	if cfg.Restore {
-		downloadMetrics(cfg.FileConsumer, cfg.MemStorage)
-		defer cfg.FileConsumer.Close()
-	}
-
 	return cfg
 }
 
 type AgentConfig struct {
-	Address             string        `env:"ADDRESS"`
-	ReportInterval      time.Duration `env:"REPORT_INTERVAL"`
-	PollInterval        time.Duration `env:"POLL_INTERVAL"`
-	StorageMetrics      *metrics.StorageMetrics
-	UpdateMetricAddress string
-	ProtocolHTTP        string
+	Address              string        `env:"ADDRESS"`
+	ReportInterval       time.Duration `env:"REPORT_INTERVAL"`
+	PollInterval         time.Duration `env:"POLL_INTERVAL"`
+	StorageMetrics       *metrics.StorageMetrics
+	UpdateMetricAddress  string
+	UpdateMetricsAddress string
+	ProtocolHTTP         string
 }
 
 func NewAgentConfig() *AgentConfig {
@@ -124,29 +101,7 @@ func NewAgentConfig() *AgentConfig {
 	}
 	// set address for update metric
 	cfg.UpdateMetricAddress = fmt.Sprintf("%s://%s/update/", cfg.ProtocolHTTP, cfg.Address)
+	cfg.UpdateMetricsAddress = fmt.Sprintf("%s://%s/updates/", cfg.ProtocolHTTP, cfg.Address)
 
 	return cfg
-}
-
-func createDir(fileStoragePath string) error {
-	if _, err := os.Stat(fileStoragePath); os.IsNotExist(err) {
-		if err = os.Mkdir(fileStoragePath, 0755); err != nil {
-			fmt.Printf("the directory %s not created\n", fileStoragePath)
-			return err
-		}
-	}
-	fmt.Printf("the directory %s is done\n", fileStoragePath)
-	return nil
-}
-
-func downloadMetrics(consumer *file.Consumer, memStorage *storage.MemStorage) {
-	fmt.Println("Read metrics from disk")
-	for {
-		m, err := consumer.ReadMetrics()
-		if err != nil {
-			break
-		}
-		memStorage.Set(m)
-	}
-	fmt.Println("Metrics downloaded")
 }

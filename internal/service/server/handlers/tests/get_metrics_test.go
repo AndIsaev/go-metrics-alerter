@@ -1,24 +1,25 @@
-package handlers
+package tests
 
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
+	mock "github.com/AndIsaev/go-metrics-alerter/internal/storage/mocks"
 )
 
 func TestGetMetricHandler(t *testing.T) {
-	MS := storage.NewMemStorage()
-	fileManager, _ := file.NewProducer("./test_metrics")
-	r := ServerRouter(MS, fileManager)
-	MS.Metrics["pollCount"] = 20
+	testApp := NewTestServerApp()
+	ctrl := gomock.NewController(t)
+	testApp.DBConn = mock.NewMockBaseStorage(ctrl)
 
-	ts := httptest.NewServer(r)
+	testApp.MemStorage.Metrics["pollCount"] = 20
+
+	ts := testApp.Server
 	defer ts.Close()
 
 	type want struct {
@@ -38,7 +39,7 @@ func TestGetMetricHandler(t *testing.T) {
 			name: "test #1 - if key not found",
 			want: want{
 				code:     http.StatusNotFound,
-				response: fmt.Sprintf("%v\n", storage.ErrKeyErrorStorage.Error()),
+				response: fmt.Sprintf("%v\n", storage.ErrKeyStorage.Error()),
 				address:  "/value/gauge/Alloc",
 				key:      "Alloc",
 				method:   http.MethodGet,
@@ -73,7 +74,7 @@ func TestGetMetricHandler(t *testing.T) {
 			resp.Body.Close()
 
 			if tt.name != "test #3 - case with counter type" {
-				assert.Nil(t, MS.Metrics[tt.want.key])
+				assert.Nil(t, testApp.MemStorage.Metrics[tt.want.key])
 			}
 
 			assert.Equal(t, tt.want.code, resp.StatusCode)

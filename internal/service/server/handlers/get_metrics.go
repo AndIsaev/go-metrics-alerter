@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -33,27 +36,45 @@ func GetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
 	}
 }
 
-func GetHandler(mem *storage.MemStorage) http.HandlerFunc {
+func GetHandler(m *storage.MemStorage, conn storage.BaseStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		metrics := common.Metrics{}
+		metric := common.Metrics{}
 		w.Header().Set("Content-Type", "application/json")
 
-		if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
+			log.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if !metrics.IsValidType() {
+		if !metric.IsValidType() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		val, err := mem.GetMetric(metrics.MType, metrics.ID)
+		// get metric
+		if conn != nil {
+			val, err := conn.Get(context.Background(), metric)
+			if err != nil {
+				log.Println(errors.Unwrap(err))
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			metric = *val
+		} else {
+			val, err := m.GetMetric(metric.MType, metric.ID)
+			if err != nil {
+				log.Println(errors.Unwrap(err))
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			metric = *val
+		}
+
+		response, err := easyjson.Marshal(metric)
 		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
-		response, _ := easyjson.Marshal(val)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

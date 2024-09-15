@@ -16,6 +16,7 @@ func MainPageHandler(mem *storage.MemStorage) http.HandlerFunc {
 			response := fmt.Sprintf("%s: %v", key, val)
 			_, err := w.Write([]byte(response + "\n"))
 			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 		}
