@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -175,7 +177,7 @@ func (a *ServerApp) initRouter() {
 	// Routes
 
 	r.Group(func(r chi.Router) {
-		r.Use(mid.GzipMiddleware)
+		r.Use(mid.GzipMiddleware, a.secretMiddleware)
 
 		// Ping db connection
 		r.Get(`/ping`, handlers.PingHandler(a.DBConn))
@@ -210,4 +212,33 @@ func (a *ServerApp) initFileManagers() error {
 	a.FileProducer = producer
 	a.FileConsumer = consumer
 	return nil
+}
+
+func (a *ServerApp) secretMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		if a.Config.Key != "" {
+			agentSha256sum := r.Header.Get("HashSHA256")
+
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(rw, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			r.Body = io.NopCloser(bytes.NewBuffer(body))
+
+			defer r.Body.Close()
+
+			serverSha256sum := common.Sha256sum(body, a.Config.Key)
+
+			if agentSha256sum != serverSha256sum {
+				log.Printf("compare hash is not success")
+				rw.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			rw.Header().Set("HashSHA256", serverSha256sum)
+		}
+
+		next.ServeHTTP(rw, r)
+	})
 }

@@ -94,7 +94,7 @@ func UpdateBatchHandler(mem *storage.MemStorage, producer *file.Producer, conn s
 		w.Header().Set("Content-Type", "application/json")
 
 		if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 

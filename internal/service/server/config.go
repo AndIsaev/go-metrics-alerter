@@ -13,6 +13,7 @@ type Config struct {
 	FileStoragePath string        `env:"FILE_STORAGE_PATH"`
 	Restore         bool          `env:"RESTORE"`
 	DBDsn           string        `env:"DATABASE_DSN"`
+	Key             string        `env:"KEY"`
 }
 
 func NewConfig() *Config {
@@ -26,8 +27,13 @@ func NewConfig() *Config {
 	flag.StringVar(&fileStoragePath, "f", "./metrics", "path of metrics on disk")
 	flag.Uint64Var(&storeInterval, "i", 300, "interval for save metrics on file")
 	flag.StringVar(&dbDsn, "d", "", "database dsn")
+	flag.StringVar(&cfg.Key, "k", "", "set key")
 
 	flag.Parse()
+
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		cfg.Key = envKey
+	}
 
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		cfg.Address = envRunAddr

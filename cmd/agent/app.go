@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/secure"
 )
 
 // AgentApp - structure of application
@@ -49,6 +49,8 @@ func (a *AgentApp) SendMetrics() error {
 		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: v.Value, Delta: v.Delta}
 		values = append(values, metric)
 	}
+	log.Println("send metrics")
+
 	res, err := a.Client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(&values).
@@ -75,7 +77,7 @@ func (a *AgentApp) HashMiddleware(c *resty.Client, r *resty.Request) error {
 			if err != nil {
 				return err
 			}
-			sha256sum := secure.Sha256sum(v, a.Config.Key)
+			sha256sum := common.Sha256sum(v, a.Config.Key)
 			c.Header.Set("HashSHA256", sha256sum)
 		}
 	}
