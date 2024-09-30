@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
+
 	"github.com/go-resty/resty/v2"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
@@ -41,11 +43,11 @@ func (a *AgentApp) initHTTPClient() *resty.Client {
 	return cli
 }
 
-func (a *AgentApp) SendMetrics() error {
+func (a *AgentApp) SendMetrics(m metrics.StorageMetrics) error {
 	values := make([]common.Metrics, 0, 100)
 	var result common.Metrics
 
-	for _, v := range a.Config.StorageMetrics.Metrics {
+	for _, v := range m.Metrics {
 		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: v.Value, Delta: v.Delta}
 		values = append(values, metric)
 	}
