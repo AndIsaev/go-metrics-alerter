@@ -27,12 +27,12 @@ func generator(input *metrics.StorageMetrics, ch chan<- metrics.StorageMetrics) 
 func worker(ch <-chan metrics.StorageMetrics, wg *sync.WaitGroup, duration time.Duration, f utils.Object) error {
 	for {
 		time.Sleep(duration)
-		select {
-		case job := <-ch:
-			if err := utils.Retry(f)(job); err != nil {
-				wg.Done()
-				return err
-			}
+		job, opened := <-ch
+		if !opened {
+			continue
+		} else if err := utils.Retry(f)(job); err != nil {
+			wg.Done()
+			return err
 		}
 	}
 }
