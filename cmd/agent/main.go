@@ -33,8 +33,6 @@ func worker(ch <-chan metrics.StorageMetrics, wg *sync.WaitGroup, duration time.
 				wg.Done()
 				return err
 			}
-		default:
-			break
 		}
 	}
 }
