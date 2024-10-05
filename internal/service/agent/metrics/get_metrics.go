@@ -63,3 +63,7 @@ func (listMetrics *StorageMetrics) Pull() {
 	listMetrics.Metrics["RandomValue"] = StorageMetric{ID: "RandomValue", MType: common.Gauge, Value: getAddress(float64(rand.Int()))}
 	listMetrics.Metrics["PollCount"] = StorageMetric{ID: "PollCount", MType: common.Counter, Delta: &pollCount}
 }
+
+func (listMetrics *StorageMetrics) AddMetric(metric StorageMetric) {
+	listMetrics.Metrics[metric.ID] = metric
+}
