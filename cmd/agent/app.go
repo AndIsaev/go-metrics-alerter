@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 
@@ -21,6 +25,9 @@ import (
 type AgentApp struct {
 	Config *agent.Config
 	Client *resty.Client
+	mu     sync.RWMutex
+	wg     sync.WaitGroup
+	jobs   chan metrics.StorageMetrics
 }
 
 func New() *AgentApp {
@@ -33,6 +40,10 @@ func New() *AgentApp {
 
 func (a *AgentApp) StartApp() {
 	a.Client = a.initHTTPClient()
+	a.jobs = make(chan metrics.StorageMetrics)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	a.runReport(ctx)
 }
 
 func (a *AgentApp) initHTTPClient() *resty.Client {
@@ -43,8 +54,59 @@ func (a *AgentApp) initHTTPClient() *resty.Client {
 	return cli
 }
 
+func (a *AgentApp) runReport(ctx context.Context) {
+	defer close(a.jobs)
+	a.wg.Add(1)
+	go a.pullMetrics(ctx)
+
+	a.wg.Add(int(a.Config.RateLimit))
+	go a.runWorkers(ctx)
+	a.wg.Wait()
+}
+
+// pullMetrics - get metrics from runtime and save to StorageMetrics
+func (a *AgentApp) pullMetrics(ctx context.Context) {
+	defer a.wg.Done()
+	for {
+		select {
+		case <-ctx.Done(): // Завершение по сигналу отмены
+			return
+		default:
+			time.Sleep(a.Config.PollInterval)
+			a.mu.Lock()
+			log.Println("pull metrics")
+			a.Config.StorageMetrics.Pull()
+			log.Println("sent metrics to channel")
+			a.jobs <- *a.Config.StorageMetrics
+			a.mu.Unlock()
+		}
+	}
+}
+
+func (a *AgentApp) runWorkers(ctx context.Context) {
+	for w := 1; w <= int(a.Config.RateLimit); w++ {
+		go func() {
+			defer a.wg.Done()
+			for {
+				select {
+				case <-ctx.Done(): // Завершение по сигналу отмены
+					return
+				case m, ok := <-a.jobs:
+					if !ok {
+						log.Printf("jobs channel closed")
+						return
+					}
+					if err := utils.Retry(a.SendMetrics)(m); err != nil {
+						log.Printf("Error sending metrics: %v", err)
+					}
+				}
+			}
+		}()
+	}
+}
+
 func (a *AgentApp) SendMetrics(m metrics.StorageMetrics) error {
-	values := make([]common.Metrics, 0, 100)
+	values := make([]common.Metrics, 0, len(m.Metrics))
 	var result common.Metrics
 
 	for _, v := range m.Metrics {
