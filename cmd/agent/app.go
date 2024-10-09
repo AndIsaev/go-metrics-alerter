@@ -137,18 +137,29 @@ func (a *AgentApp) SendMetrics(m metrics.StorageMetrics) error {
 }
 
 func (a *AgentApp) HashMiddleware(c *resty.Client, r *resty.Request) error {
-	if a.Config.Key != "" {
-		switch value := r.Body.(type) {
-		case *[]common.Metrics:
 
-			v, err := json.Marshal(value)
-			if err != nil {
-				return err
-			}
-			sha256sum := common.Sha256sum(v, a.Config.Key)
-			c.Header.Set("HashSHA256", sha256sum)
-		}
+	if a.Config.Key == "" {
+		return nil
 	}
+	value, ok := r.Body.(*[]common.Metrics)
+	if !ok {
+		log.Printf("not expected type: %T", r.Body)
+		return nil
+	}
+	if value == nil {
+		return nil
+	}
+
+	v, err := json.Marshal(value)
+	if err != nil {
+		log.Printf("can't serialize value: %v", err)
+		return err
+	}
+
+	sha256sum := common.Sha256sum(v, a.Config.Key)
+
+	// Устанавливаем заголовок с хэшем
+	c.Header.Set("HashSHA256", sha256sum)
 	return nil
 }
 
