@@ -80,8 +80,8 @@ func (a *AgentApp) pullMetrics(ctx context.Context) {
 			log.Println("pull metrics")
 			a.Config.StorageMetrics.Pull()
 			log.Println("sent metrics to channel")
-			a.jobs <- *a.Config.StorageMetrics
 			a.mu.Unlock()
+			a.jobs <- *a.Config.StorageMetrics
 			time.Sleep(a.Config.PollInterval)
 		}
 	}
