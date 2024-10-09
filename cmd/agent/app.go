@@ -44,6 +44,7 @@ func (a *AgentApp) StartApp() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	a.runReport(ctx)
+	defer close(a.jobs)
 }
 
 func (a *AgentApp) initHTTPClient() *resty.Client {
@@ -55,7 +56,6 @@ func (a *AgentApp) initHTTPClient() *resty.Client {
 }
 
 func (a *AgentApp) runReport(ctx context.Context) {
-	defer close(a.jobs)
 	a.wg.Add(1)
 	go a.pullMetrics(ctx)
 
