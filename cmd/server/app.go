@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -13,7 +17,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
 	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
 	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
@@ -26,14 +29,14 @@ type ServerApp struct {
 	FileProducer *file.Producer
 	FileConsumer *file.Consumer
 	DBConn       storage.BaseStorage
-	Config       *service.ServerConfig
+	Config       *server.Config
 	Server       *http.Server
 }
 
 // New - create new app
 func New() *ServerApp {
 	app := &ServerApp{}
-	config := service.NewServerConfig()
+	config := server.NewConfig()
 	app.Config = config
 
 	// init file storage
@@ -172,6 +175,10 @@ func (a *ServerApp) initRouter() {
 	})
 
 	// Routes
+	r.Group(func(r chi.Router) {
+		r.Use(mid.GzipMiddleware, a.secretMiddleware)
+		r.Post(`/updates`, handlers.UpdateBatchHandler(a.MemStorage, a.FileProducer, a.DBConn))
+	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(mid.GzipMiddleware)
@@ -182,7 +189,6 @@ func (a *ServerApp) initRouter() {
 		// update
 		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, handlers.SetMetricHandler(a.MemStorage))
 		r.Post(`/update`, handlers.UpdateHandler(a.MemStorage, a.FileProducer, a.DBConn))
-		r.Post(`/updates`, handlers.UpdateBatchHandler(a.MemStorage, a.FileProducer, a.DBConn))
 
 		// value
 		r.Get(`/value/{MetricType}/{MetricName}`, handlers.GetMetricHandler(a.MemStorage))
@@ -209,4 +215,33 @@ func (a *ServerApp) initFileManagers() error {
 	a.FileProducer = producer
 	a.FileConsumer = consumer
 	return nil
+}
+
+func (a *ServerApp) secretMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		if a.Config.Key != "" {
+			agentSha256sum := r.Header.Get("HashSHA256")
+
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(rw, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			r.Body = io.NopCloser(bytes.NewBuffer(body))
+
+			defer r.Body.Close()
+
+			serverSha256sum := common.Sha256sum(body, a.Config.Key)
+
+			if agentSha256sum != serverSha256sum {
+				log.Printf("compare hash is not success")
+				rw.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			rw.Header().Set("HashSHA256", serverSha256sum)
+		}
+
+		next.ServeHTTP(rw, r)
+	})
 }
