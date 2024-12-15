@@ -22,7 +22,7 @@ func NewConfig() *Config {
 	var fileStoragePath string
 	var dbDsn string
 
-	flag.StringVar(&cfg.Address, "a", "localhost:8080", "server address")
+	flag.StringVar(&cfg.Address, "a", ":8080", "server address")
 	flag.BoolVar(&cfg.Restore, "r", true, "load metrics from file")
 	flag.StringVar(&fileStoragePath, "f", "./metrics", "path of metrics on disk")
 	flag.Uint64Var(&storeInterval, "i", 300, "interval for save metrics on file")

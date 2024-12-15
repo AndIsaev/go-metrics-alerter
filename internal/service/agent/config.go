@@ -28,7 +28,7 @@ func NewConfig() *Config {
 	var reportIntervalSeconds uint64
 	var rateLimit uint64
 
-	flag.StringVar(&cfg.Address, "a", "localhost:8080", "address")
+	flag.StringVar(&cfg.Address, "a", ":8080", "address")
 	flag.Uint64Var(&reportIntervalSeconds, "r", 10, "seconds of report interval")
 	flag.Uint64Var(&pollIntervalSeconds, "p", 2, "seconds of poll interval")
 	flag.StringVar(&cfg.Key, "k", "", "set key")
