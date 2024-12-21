@@ -1,0 +1,31 @@
+package postgres_db
+
+import (
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
+	"log"
+)
+
+type PgStorage struct {
+	db *sqlx.DB
+}
+
+func NewPgStorage(connString string) (*PgStorage, error) {
+	conn, err := sqlx.Connect("pgx", connString)
+	if err != nil {
+		log.Printf("unable to connect to database: %v\n", err)
+		return nil, err
+	}
+	log.Println("init pg storage")
+
+	return &PgStorage{db: conn}, nil
+}
+
+func (p *PgStorage) System() storage.SystemRepository {
+	return p
+}
+
+func (p *PgStorage) Metric() storage.MetricRepository {
+	return p
+}

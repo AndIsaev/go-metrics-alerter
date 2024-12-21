@@ -1,6 +1,7 @@
-package server
+package tests
 
 import (
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func TestIsIncorrectType(t *testing.T) {
 	check := assert.New(t)
 
 	for _, v := range mockedMetrics {
-		result := IsCorrectType(v)
+		result := server.IsCorrectType(v)
 		{
 			check.False(result)
 		}
@@ -41,7 +42,7 @@ func TestIsCorrectType(t *testing.T) {
 	check := assert.New(t)
 
 	for _, v := range mockedMetrics {
-		result := IsCorrectType(v)
+		result := server.IsCorrectType(v)
 		{
 			check.True(result)
 		}

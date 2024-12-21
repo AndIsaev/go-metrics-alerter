@@ -1,7 +1,8 @@
-package server
+package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -12,7 +13,7 @@ type Config struct {
 	StoreInterval   time.Duration `env:"STORE_INTERVAL"`
 	FileStoragePath string        `env:"FILE_STORAGE_PATH"`
 	Restore         bool          `env:"RESTORE"`
-	DBDsn           string        `env:"DATABASE_DSN"`
+	Dsn             string        `env:"DATABASE_DSN"`
 	Key             string        `env:"KEY"`
 }
 
@@ -21,9 +22,10 @@ func NewConfig() *Config {
 	var storeInterval uint64
 	var fileStoragePath string
 	var dbDsn string
+	var restore bool
 
 	flag.StringVar(&cfg.Address, "a", ":8080", "server address")
-	flag.BoolVar(&cfg.Restore, "r", true, "load metrics from file")
+	flag.BoolVar(&restore, "r", true, "load metrics from file")
 	flag.StringVar(&fileStoragePath, "f", "./metrics", "path of metrics on disk")
 	flag.Uint64Var(&storeInterval, "i", 300, "interval for save metrics on file")
 	flag.StringVar(&dbDsn, "d", "", "database dsn")
@@ -39,10 +41,21 @@ func NewConfig() *Config {
 		cfg.Address = envRunAddr
 	}
 
-	if envDBDsn := os.Getenv("DATABASE_DSN"); envDBDsn != "" {
-		cfg.DBDsn = envDBDsn
+	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
+		//cfg.Restore = envDBDsn
+		val, err := strconv.ParseBool(envRestore)
+		if err != nil {
+			log.Println("error parse r flag, must be boolean value")
+		}
+		cfg.Restore = val
 	} else {
-		cfg.DBDsn = dbDsn
+		cfg.Restore = restore
+	}
+
+	if envDBDsn := os.Getenv("DATABASE_DSN"); envDBDsn != "" {
+		cfg.Dsn = envDBDsn
+	} else {
+		cfg.Dsn = dbDsn
 	}
 
 	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {

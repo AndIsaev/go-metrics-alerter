@@ -1,22 +1,18 @@
-package handlers
+package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"net/http"
-
-	"github.com/go-chi/chi"
-	"github.com/mailru/easyjson"
-
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
+	"github.com/go-chi/chi"
+	"github.com/mailru/easyjson"
+	"log"
+	"net/http"
 )
 
-func GetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
+func (h *Handler) GetByURLParamHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		MetricType := chi.URLParam(r, "MetricType")
 		MetricName := chi.URLParam(r, "MetricName")
@@ -27,19 +23,27 @@ func GetMetricHandler(mem *storage.MemStorage) http.HandlerFunc {
 			return
 		}
 
-		val, err := mem.GetMetricByName(MetricName)
+		metric, err := h.MetricService.GetMetricByName(r.Context(), MetricName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		w.Write([]byte(fmt.Sprintf("%v", val)))
+		var val string
+		if metric.Delta != nil {
+			val = fmt.Sprintf("%v", *metric.Delta)
+		} else {
+			val = fmt.Sprintf("%v", *metric.Value)
+		}
+
+		w.Write([]byte(val))
 	}
 }
 
-func GetHandler(m *storage.MemStorage, conn storage.BaseStorage) http.HandlerFunc {
+func (h *Handler) GetHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metric := common.Metrics{}
 		w.Header().Set("Content-Type", "application/json")
+		defer r.Body.Close()
 
 		if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
 			log.Println(err)
@@ -51,26 +55,14 @@ func GetHandler(m *storage.MemStorage, conn storage.BaseStorage) http.HandlerFun
 			return
 		}
 
-		// get metric
-		if conn != nil {
-			val, err := conn.Get(context.Background(), metric)
-			if err != nil {
-				log.Println(errors.Unwrap(err))
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-			metric = *val
-		} else {
-			val, err := m.GetMetric(metric.MType, metric.ID)
-			if err != nil {
-				log.Println(errors.Unwrap(err))
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-			metric = *val
+		value, err := h.MetricService.GetMetricByName(r.Context(), metric.ID)
+		if err != nil {
+			log.Println(errors.Unwrap(err))
+			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 
-		response, err := easyjson.Marshal(metric)
+		response, err := easyjson.Marshal(value)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
