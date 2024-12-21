@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/pprof"
 	"os"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
@@ -53,7 +54,7 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 	}
 
 	if a.Config.DBDsn != "" {
-		// connect to DB
+		// connect to db
 		conn, err := storage.NewPostgresStorage(a.Config.DBDsn)
 		if err != nil {
 			return err
@@ -92,16 +93,13 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 
 // startHTTPServer - start http server
 func (a *ServerApp) startHTTPServer() error {
-	log.Printf("start server on: %s\n", a.Config.Address)
+	log.Printf("start server on %s\n", a.Config.Address)
 	return a.Server.ListenAndServe()
 }
 
 // initHTTPServer - init http server
 func (a *ServerApp) initHTTPServer() {
-	server := &http.Server{}
-	server.Handler = a.Router
-	server.Addr = a.Config.Address
-	a.Server = server
+	a.Server = &http.Server{Handler: a.Router, Addr: a.Config.Address}
 }
 
 // downloadMetrics - Read metrics from disk
@@ -173,6 +171,20 @@ func (a *ServerApp) initRouter() {
 		response, _ := easyjson.Marshal(body)
 		w.Write(response)
 	})
+
+	// Pprof routes
+	r.HandleFunc("/debug/pprof", pprof.Index)
+	r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	r.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	r.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	r.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
+	r.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	r.Handle("/debug/pprof/block", pprof.Handler("block"))
+	r.Handle("/debug/pprof/allocs", pprof.Handler("allocs"))
 
 	// Routes
 	r.Group(func(r chi.Router) {

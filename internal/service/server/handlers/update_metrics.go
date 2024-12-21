@@ -75,7 +75,7 @@ func UpdateHandler(mem *storage.MemStorage, producer *file.Producer, conn storag
 				return
 			}
 		}
-		// save new metrics to DB
+		// save new metrics to db
 		if err := mem.Set(&metrics); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -114,7 +114,7 @@ func UpdateBatchHandler(mem *storage.MemStorage, producer *file.Producer, conn s
 				return
 			}
 		}
-		// save new metrics to DB
+		// save new metrics to db
 		if err := mem.InsertBatch(&metrics); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}

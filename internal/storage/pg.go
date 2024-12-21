@@ -11,7 +11,7 @@ import (
 )
 
 type PostgresStorage struct {
-	DB *sqlx.DB
+	db *sqlx.DB
 }
 
 func NewPostgresStorage(connString string) (*PostgresStorage, error) {
@@ -19,11 +19,11 @@ func NewPostgresStorage(connString string) (*PostgresStorage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
-	return &PostgresStorage{DB: conn}, nil
+	return &PostgresStorage{db: conn}, nil
 }
 
 func (s *PostgresStorage) Ping() error {
-	err := s.DB.Ping()
+	err := s.db.Ping()
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
@@ -35,7 +35,7 @@ func (s *PostgresStorage) Insert(ctx context.Context, m common.Metrics) error {
 				values ($1, $2, $3, $4) on conflict (id) 
 				do update set delta = metric.delta + $3, value = $4;`
 
-	_, err := s.DB.ExecContext(ctx, query, m.ID, m.MType, m.Delta, m.Value)
+	_, err := s.db.ExecContext(ctx, query, m.ID, m.MType, m.Delta, m.Value)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
@@ -47,7 +47,7 @@ func (s *PostgresStorage) Get(ctx context.Context, m common.Metrics) (*common.Me
 
 	query := `select * from metric where id = $1 and "type" = $2;`
 
-	if err := s.DB.GetContext(ctx, &result, query, m.ID, m.MType); err != nil {
+	if err := s.db.GetContext(ctx, &result, query, m.ID, m.MType); err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
 
@@ -55,7 +55,7 @@ func (s *PostgresStorage) Get(ctx context.Context, m common.Metrics) (*common.Me
 }
 
 func (s *PostgresStorage) Close() error {
-	err := s.DB.Close()
+	err := s.db.Close()
 	return fmt.Errorf("%w", err)
 }
 
@@ -66,7 +66,7 @@ func (s *PostgresStorage) Create(ctx context.Context) error {
 								delta bigint, 
 								"value" double precision);`
 
-	_, err := s.DB.ExecContext(ctx, queryMetricTable)
+	_, err := s.db.ExecContext(ctx, queryMetricTable)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
@@ -77,7 +77,7 @@ func (s *PostgresStorage) InsertBatch(ctx context.Context, metrics *[]common.Met
 	if metrics == nil {
 		return nil
 	}
-	tx, err := s.DB.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
