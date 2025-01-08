@@ -211,3 +211,28 @@ func TestMemStorage_GetByName(t *testing.T) {
 		})
 	}
 }
+
+func TestMemStorage_Insert(t *testing.T) {
+	delta := int64Ptr(100)
+	value := float64Ptr(12.34)
+	inMemStorage := NewMemStorage(nil, false)
+
+	tests := []struct {
+		name string
+		want common.Metrics
+	}{
+		{"Valid Counter Metric", common.Metrics{ID: "metric1", MType: common.Counter, Delta: delta}},
+		{"Valid Gauge Metric", common.Metrics{ID: "metric2", MType: common.Gauge, Value: value}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := inMemStorage.Insert(context.Background(), tt.want)
+			existsMetric, err := inMemStorage.GetByName(context.Background(), tt.want.ID)
+			if err == nil {
+				assert.Equal(t, existsMetric, got)
+				return
+			}
+			t.Errorf("MemStorage.Insert() = %v, want %v", got, tt.want)
+		})
+	}
+}
