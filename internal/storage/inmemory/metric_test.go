@@ -161,3 +161,53 @@ func TestMemStorage_List(t *testing.T) {
 		})
 	}
 }
+
+func TestMemStorage_GetByName(t *testing.T) {
+	delta := int64Ptr(100)
+	value := float64Ptr(12.34)
+	inMemStorage := &MemStorage{
+		Metrics: map[string]common.Metrics{
+			"metric1": {ID: "metric1", MType: common.Counter, Delta: delta},
+			"metric2": {ID: "metric2", MType: common.Gauge, Value: value},
+		},
+	}
+
+	tests := []struct {
+		name    string
+		mName   string
+		mType   string
+		want    common.Metrics
+		wantErr error
+	}{
+		{
+			name:    "Valid Counter Metric",
+			mName:   "metric1",
+			want:    common.Metrics{ID: "metric1", MType: common.Counter, Delta: delta},
+			wantErr: nil,
+		},
+		{
+			name:    "Valid Gauge Metric",
+			mName:   "metric2",
+			want:    common.Metrics{ID: "metric2", MType: common.Gauge, Value: value},
+			wantErr: nil,
+		},
+		{
+			name:    "Non-existent Metric",
+			mName:   "unknown",
+			wantErr: storage.ErrValueNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := inMemStorage.GetByName(context.Background(), tt.mName)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("MemStorage.GetByName() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if (err == nil) && (got != tt.want) {
+				t.Errorf("MemStorage.GetByName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
