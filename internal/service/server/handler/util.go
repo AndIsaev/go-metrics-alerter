@@ -19,7 +19,7 @@ func IsCorrectType(MetricType string) bool {
 }
 
 // DefineMetricValue - define correct value for type of Metrics
-func DefineMetricValue(MetricType string, MetricValue string) (interface{}, error) {
+func DefineMetricValue(MetricType string, MetricValue string) (any, error) {
 	switch MetricType {
 	case common.Gauge:
 		if val, err := strconv.ParseFloat(MetricValue, 64); err == nil {
