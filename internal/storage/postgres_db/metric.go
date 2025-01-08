@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"log"
 )
 
 func (p *PgStorage) List(ctx context.Context) ([]common.Metrics, error) {

@@ -2,9 +2,10 @@ package file
 
 import (
 	"encoding/json"
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"log"
 	"os"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 func (fm *FileManager) CreateDir(fileStoragePath string) error {

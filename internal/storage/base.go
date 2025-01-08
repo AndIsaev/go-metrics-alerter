@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 

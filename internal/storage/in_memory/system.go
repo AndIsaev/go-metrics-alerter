@@ -3,9 +3,10 @@ package in_memory
 import (
 	"context"
 	"errors"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"io"
 	"log"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
 func (m *MemStorage) Close(_ context.Context) error {

@@ -2,9 +2,10 @@ package server
 
 import (
 	"context"
+	"log"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
-	"log"
 )
 
 type Service interface {

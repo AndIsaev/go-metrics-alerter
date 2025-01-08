@@ -3,6 +3,17 @@ package main
 import (
 	"bytes"
 	"context"
+	"io"
+	"log"
+	"net/http"
+	"net/http/pprof"
+	"sync"
+	"time"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	"github.com/mailru/easyjson"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
@@ -12,15 +23,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage/file"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage/in_memory"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage/postgres_db"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
-	"github.com/mailru/easyjson"
-	"io"
-	"log"
-	"net/http"
-	"net/http/pprof"
-	"sync"
-	"time"
 )
 
 // ServerApp - structure of application
@@ -31,7 +33,6 @@ type ServerApp struct {
 	Server  *http.Server
 	Handler *handler.Handler
 	fm      *file.FileManager
-	chErr   chan error
 }
 
 // New - create new app
@@ -123,7 +124,6 @@ func (a *ServerApp) Shutdown() {
 		log.Printf("error close storage: %v\n", err.Error())
 		return
 	}
-
 }
 
 // initRouter - initialize new router
@@ -221,7 +221,6 @@ func (a *ServerApp) initStorage(ctx context.Context) error {
 		}
 
 		a.Conn = conn
-
 	} else {
 		var syncFileManager *file.FileManager
 		var syncSave = false

@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
-	"github.com/go-chi/chi"
-	"github.com/mailru/easyjson"
 	"log"
 	"net/http"
+
+	"github.com/go-chi/chi"
+	"github.com/mailru/easyjson"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 func (h *Handler) GetByURLParamHandler() http.HandlerFunc {
@@ -18,7 +19,7 @@ func (h *Handler) GetByURLParamHandler() http.HandlerFunc {
 		MetricName := chi.URLParam(r, "MetricName")
 
 		// check value is specified for the metric type
-		if !server.IsCorrectType(MetricType) {
+		if !IsCorrectType(MetricType) {
 			http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
 			return
 		}

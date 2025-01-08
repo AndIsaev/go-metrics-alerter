@@ -2,6 +2,7 @@ package in_memory
 
 import (
 	"context"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
@@ -78,7 +79,6 @@ func (m *MemStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) 
 			existsMetric.Delta = &newVal
 			_ = m.Create(ctx, existsMetric)
 		}
-
 	}
 
 	if m.fm != nil && m.syncSave {

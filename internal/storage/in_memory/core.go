@@ -1,10 +1,11 @@
 package in_memory
 
 import (
+	"log"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage/file"
-	"log"
 )
 
 type MemStorage struct {
