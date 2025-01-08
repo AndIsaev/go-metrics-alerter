@@ -21,8 +21,8 @@ import (
 	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage/file"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage/in_memory"
-	"github.com/AndIsaev/go-metrics-alerter/internal/storage/postgres_db"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/inmemory"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/postgres"
 )
 
 // ServerApp - structure of application
@@ -215,7 +215,7 @@ func (a *ServerApp) secretMiddleware(next http.Handler) http.Handler {
 
 func (a *ServerApp) initStorage(ctx context.Context) error {
 	if a.Config.Dsn != "" {
-		conn, err := postgres_db.NewPgStorage(a.Config.Dsn)
+		conn, err := postgres.NewPgStorage(a.Config.Dsn)
 		if err != nil {
 			return err
 		}
@@ -243,7 +243,7 @@ func (a *ServerApp) initStorage(ctx context.Context) error {
 				syncFileManager = fileManager
 			}
 		}
-		a.Conn = in_memory.NewMemStorage(syncFileManager, syncSave)
+		a.Conn = inmemory.NewMemStorage(syncFileManager, syncSave)
 	}
 
 	if a.Config.Restore {
