@@ -226,7 +226,7 @@ func TestMemStorage_Insert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := inMemStorage.Insert(context.Background(), tt.want)
+			got, _ := inMemStorage.Insert(context.Background(), tt.want)
 			existsMetric, err := inMemStorage.GetByName(context.Background(), tt.want.ID)
 			if err == nil {
 				assert.Equal(t, existsMetric, got)
