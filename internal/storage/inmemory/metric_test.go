@@ -12,18 +12,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
-// Определяем срез, который будет сортироваться
-type ByID []common.Metrics
-
-// Реализация метода Len() для интерфейса sort.Interface
-func (a ByID) Len() int { return len(a) }
-
-// Реализация метода Less(i, j int) bool для интерфейса sort.Interface
-func (a ByID) Less(i, j int) bool { return a[i].ID < a[j].ID }
-
-// Реализация метода Swap(i, j int) для интерфейса sort.Interface
-func (a ByID) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-
 func int64Ptr(i int64) *int64 {
 	return &i
 }
@@ -152,7 +140,7 @@ func TestMemStorage_List(t *testing.T) {
 		count   int
 	}{
 		{
-			name: "Get list with metrics",
+			name: "Get list metrics",
 			want: []common.Metrics{
 				{ID: "metric1", MType: common.Counter, Delta: delta},
 				{ID: "metric2", MType: common.Gauge, Value: value},
@@ -257,15 +245,24 @@ func TestMemStorage_Insert(t *testing.T) {
 func TestMemStorage_InsertBatch(t *testing.T) {
 	delta := int64Ptr(100)
 	value := float64Ptr(12.34)
+	updatedValue := int64Ptr(*delta + *delta)
 	inMemStorage := NewMemStorage(nil, false)
+	inMemStorage.Insert(context.Background(), common.Metrics{ID: "existsMetric", MType: common.Counter, Delta: delta})
 
 	tests := []struct {
 		name string
+		body []common.Metrics
 		want []common.Metrics
 	}{
 		{
-			name: "Get list with metrics",
+			name: "insert batch metrics",
+			body: []common.Metrics{
+				{ID: "existsMetric", MType: common.Counter, Delta: delta},
+				{ID: "metric1", MType: common.Counter, Delta: delta},
+				{ID: "metric2", MType: common.Gauge, Value: value},
+			},
 			want: []common.Metrics{
+				{ID: "existsMetric", MType: common.Counter, Delta: updatedValue},
 				{ID: "metric1", MType: common.Counter, Delta: delta},
 				{ID: "metric2", MType: common.Gauge, Value: value},
 			},
@@ -273,7 +270,7 @@ func TestMemStorage_InsertBatch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_ = inMemStorage.InsertBatch(context.Background(), tt.want)
+			_ = inMemStorage.InsertBatch(context.Background(), tt.body)
 			got, err := inMemStorage.List(context.Background())
 			sort.Slice(got, func(i, j int) bool {
 				return got[i].ID < got[j].ID
@@ -284,6 +281,75 @@ func TestMemStorage_InsertBatch(t *testing.T) {
 				return
 			}
 			t.Errorf("MemStorage.InsertBatch() = %v, want %v", got, tt.want)
+		})
+	}
+}
+
+func TestMemStorage_UpsertByValue(t *testing.T) {
+	incorrectDelta := "100"
+	incorrectValue := "12.34"
+	intDelta := int64Ptr(100)
+	floatValue := float64Ptr(12.34)
+	updatedValue := int64Ptr(*intDelta + *intDelta)
+	inMemStorage := NewMemStorage(nil, false)
+	inMemStorage.Insert(context.Background(), common.Metrics{ID: "metric5", MType: common.Counter, Delta: intDelta})
+
+	tests := []struct {
+		name    string
+		body    common.Metrics
+		value   any
+		want    common.Metrics
+		wantErr error
+	}{
+		{
+			"Valid Counter Metric",
+			common.Metrics{ID: "metric1", MType: common.Counter},
+			*intDelta,
+			common.Metrics{ID: "metric1", MType: common.Counter, Delta: intDelta},
+			nil,
+		},
+		{
+			"Valid Gauge Metric",
+			common.Metrics{ID: "metric2", MType: common.Gauge},
+			*floatValue,
+			common.Metrics{ID: "metric2", MType: common.Gauge, Value: floatValue},
+			nil,
+		},
+		{
+			"Incorrect Counter Metric",
+			common.Metrics{ID: "metric3", MType: common.Counter},
+			incorrectDelta,
+			common.Metrics{ID: "metric3", MType: common.Counter, Delta: intDelta},
+			storage.ErrMetricValue,
+		},
+		{
+			"Incorrect Gauge Metric",
+			common.Metrics{ID: "metric4", MType: common.Gauge},
+			incorrectValue,
+			common.Metrics{ID: "metric4", MType: common.Gauge, Value: floatValue},
+			storage.ErrMetricValue,
+		},
+		{
+			"Update Counter Metric",
+			common.Metrics{ID: "metric5", MType: common.Counter},
+			*intDelta,
+			common.Metrics{ID: "metric5", MType: common.Counter, Delta: updatedValue},
+			nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := inMemStorage.UpsertByValue(context.Background(), tt.body, tt.value)
+			got, _ := inMemStorage.GetByName(context.Background(), tt.want.ID)
+
+			assert.ErrorIs(t, err, tt.wantErr)
+			if err == nil {
+				assert.Equal(t, tt.want, got)
+				return
+			}
+			if !errors.Is(err, storage.ErrMetricValue) {
+				t.Errorf("MemStorage.UpsertByValue() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
