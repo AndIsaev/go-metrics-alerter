@@ -236,3 +236,33 @@ func TestMemStorage_Insert(t *testing.T) {
 		})
 	}
 }
+
+func TestMemStorage_InsertBatch(t *testing.T) {
+	delta := int64Ptr(100)
+	value := float64Ptr(12.34)
+	inMemStorage := NewMemStorage(nil, false)
+
+	tests := []struct {
+		name string
+		want []common.Metrics
+	}{
+		{
+			name: "Get list with metrics",
+			want: []common.Metrics{
+				{ID: "metric1", MType: common.Counter, Delta: delta},
+				{ID: "metric2", MType: common.Gauge, Value: value},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_ = inMemStorage.InsertBatch(context.Background(), tt.want)
+			got, err := inMemStorage.List(context.Background())
+			if err == nil {
+				assert.Equal(t, tt.want, got)
+				return
+			}
+			t.Errorf("MemStorage.InsertBatch() = %v, want %v", got, tt.want)
+		})
+	}
+}
