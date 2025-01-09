@@ -3,6 +3,7 @@ package inmemory
 import (
 	"context"
 	"errors"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,6 +11,18 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
+
+// Определяем срез, который будет сортироваться
+type ByID []common.Metrics
+
+// Реализация метода Len() для интерфейса sort.Interface
+func (a ByID) Len() int { return len(a) }
+
+// Реализация метода Less(i, j int) bool для интерфейса sort.Interface
+func (a ByID) Less(i, j int) bool { return a[i].ID < a[j].ID }
+
+// Реализация метода Swap(i, j int) для интерфейса sort.Interface
+func (a ByID) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 
 func int64Ptr(i int64) *int64 {
 	return &i
@@ -152,6 +165,10 @@ func TestMemStorage_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := inMemStorage.List(context.Background())
+			sort.Slice(got, func(i, j int) bool {
+				return got[i].ID < got[j].ID
+			})
+
 			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("MemStorage.List() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -258,6 +275,10 @@ func TestMemStorage_InsertBatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_ = inMemStorage.InsertBatch(context.Background(), tt.want)
 			got, err := inMemStorage.List(context.Background())
+			sort.Slice(got, func(i, j int) bool {
+				return got[i].ID < got[j].ID
+			})
+
 			if err == nil {
 				assert.Equal(t, tt.want, got)
 				return
