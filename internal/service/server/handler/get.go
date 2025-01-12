@@ -26,6 +26,7 @@ func (h *Handler) GetByURLParamHandler() http.HandlerFunc {
 
 		metric, err := h.MetricService.GetMetricByName(r.Context(), MetricName)
 		if err != nil {
+			log.Println(errors.Unwrap(err))
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
@@ -47,7 +48,7 @@ func (h *Handler) GetHandler() http.HandlerFunc {
 		defer r.Body.Close()
 
 		if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
-			log.Println(err)
+			log.Println(errors.Unwrap(err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -65,6 +66,7 @@ func (h *Handler) GetHandler() http.HandlerFunc {
 
 		response, err := easyjson.Marshal(value)
 		if err != nil {
+			log.Println(errors.Unwrap(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

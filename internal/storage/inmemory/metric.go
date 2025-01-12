@@ -2,6 +2,7 @@ package inmemory
 
 import (
 	"context"
+	"log"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
@@ -54,12 +55,10 @@ func (m *MemStorage) GetByName(_ context.Context, name string) (common.Metrics, 
 
 func (m *MemStorage) Create(ctx context.Context, metric common.Metrics) error {
 	m.Metrics[metric.ID] = metric
-	if m.fm != nil && m.syncSave {
-		metrics, _ := m.List(ctx)
-		err := m.fm.Overwrite(metrics)
-		if err != nil {
-			return err
-		}
+	err := m.saveMetricsToDisc(ctx)
+	if err != nil {
+		log.Println("error save metrics to disc")
+		return err
 	}
 	return nil
 }
@@ -81,12 +80,10 @@ func (m *MemStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) 
 		}
 	}
 
-	if m.fm != nil && m.syncSave {
-		existsValues, _ := m.List(ctx)
-		err := m.fm.Overwrite(existsValues)
-		if err != nil {
-			return err
-		}
+	err := m.saveMetricsToDisc(ctx)
+	if err != nil {
+		log.Println("error save metrics to disc")
+		return err
 	}
 
 	return nil
@@ -102,12 +99,20 @@ func (m *MemStorage) GetByNameType(_ context.Context, name, mType string) (commo
 
 func (m *MemStorage) Insert(ctx context.Context, metric common.Metrics) (common.Metrics, error) {
 	m.Metrics[metric.ID] = metric
-	if m.fm != nil {
-		metrics, _ := m.List(ctx)
-		err := m.fm.Overwrite(metrics)
-		if err != nil {
-			return metric, err
-		}
+
+	err := m.saveMetricsToDisc(ctx)
+	if err != nil {
+		log.Println("error save metrics to disc")
+		return common.Metrics{}, err
 	}
+
 	return metric, nil
+}
+
+func (m *MemStorage) saveMetricsToDisc(ctx context.Context) error {
+	if m.syncSave {
+		metrics, _ := m.List(ctx)
+		return m.fm.Overwrite(metrics)
+	}
+	return nil
 }

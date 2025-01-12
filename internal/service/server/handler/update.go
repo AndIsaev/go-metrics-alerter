@@ -69,7 +69,7 @@ func (h *Handler) UpdateRowHandler() http.HandlerFunc {
 
 func (h *Handler) UpdateBatchHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		metrics := make([]common.Metrics, 0, 100)
+		metrics := make([]common.Metrics, 0)
 		defer r.Body.Close()
 
 		w.Header().Set("Content-Type", "application/json")

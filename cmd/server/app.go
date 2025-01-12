@@ -225,16 +225,18 @@ func (a *ServerApp) initStorage(ctx context.Context) error {
 		var syncFileManager *file.FileManager
 		var syncSave = false
 		if a.Config.FileStoragePath != "" {
+			if err := a.fm.CreateDir(a.Config.FileStoragePath); err != nil {
+				log.Printf("error create directory: %s\n", err.Error())
+				return err
+			}
+
 			fileManager, err := file.NewFileManager(a.Config.FileStoragePath)
 			if err != nil {
 				log.Printf("error init file manager")
 				return err
 			}
 			a.fm = fileManager
-			if err := a.fm.CreateDir(a.Config.FileStoragePath); err != nil {
-				log.Printf("error create directory: %s\n", err.Error())
-				return err
-			}
+
 			if a.Config.StoreInterval == 0 {
 				syncFileManager = fileManager
 				syncSave = true

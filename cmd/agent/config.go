@@ -32,7 +32,7 @@ func NewConfig() *Config {
 	flag.Uint64Var(&reportIntervalSeconds, "r", 10, "seconds of report interval")
 	flag.Uint64Var(&pollIntervalSeconds, "p", 2, "seconds of poll interval")
 	flag.StringVar(&cfg.Key, "k", "", "set key")
-	flag.Uint64Var(&rateLimit, "l", 1, "rate limit")
+	flag.Uint64Var(&rateLimit, "l", 10, "rate limit")
 
 	flag.Parse()
 
