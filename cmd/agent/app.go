@@ -10,13 +10,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
-
 	"github.com/go-resty/resty/v2"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 )
 
 // AgentApp - structure of application
