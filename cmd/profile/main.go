@@ -67,13 +67,15 @@ func request(req *Req) (*Resp, error) {
 			},
 		}
 		resp, err = client.Get(req.url)
+		defer resp.Body.Close()
+
 	case "post":
 		resp, err = http.Post(req.url, "text/plain; charset=utf-8", strings.NewReader(req.body))
+		defer resp.Body.Close()
 	}
 	if err != nil {
 		return nil, fmt.Errorf("%s request error: %v", req.url, err)
 	}
-	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
