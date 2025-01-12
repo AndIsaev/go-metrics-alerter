@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	limit   = 20
-	postReq = "http://127.0.0.1:8080/"
-	path    = "cmd/profile/bench.txt"
+	limit        = 20
+	randoMetrics = 100000
+	postReq      = "http://127.0.0.1:8080/"
+	path         = "cmd/profile/bench.txt"
 )
 
 type Req struct {
@@ -108,7 +109,7 @@ func main() {
 	ok, _ := exists(dir)
 
 	if !ok {
-		metrics := generateRandomMetrics(100000) // генерируем 10 записей
+		metrics := generateRandomMetrics(randoMetrics)
 		err := writeToFile(dir, metrics)
 		if err != nil {
 			log.Fatal("Ошибка при записи файла:", err)
@@ -119,7 +120,7 @@ func main() {
 		log.Println("файл уже был создан")
 	}
 
-	urls := make([]string, 0, 10000)
+	urls := make([]string, 0, randoMetrics)
 	chReq := make(chan *Req)
 	chResp := make(chan *Resp)
 	chErr := make(chan error)
