@@ -9,6 +9,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
+// SendMetricHandler using the method to establish indicators
 func SendMetricHandler(client *resty.Client, url string, body common.Metrics) error {
 	var result common.Metrics
 

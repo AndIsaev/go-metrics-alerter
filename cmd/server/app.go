@@ -55,6 +55,7 @@ func New() *ServerApp {
 	return app
 }
 
+// StartApp start application
 func (a *ServerApp) StartApp(ctx context.Context) error {
 	if err := logger.Initialize(); err != nil {
 		return err
@@ -114,6 +115,7 @@ func (a *ServerApp) initHTTPServer() {
 	a.Server = &http.Server{Handler: a.Router, Addr: a.Config.Address}
 }
 
+// Shutdown close connections
 func (a *ServerApp) Shutdown() {
 	ctx := context.Background()
 	if a.fm != nil {

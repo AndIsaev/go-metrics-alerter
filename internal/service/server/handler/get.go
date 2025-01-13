@@ -13,6 +13,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
+// GetByURLParamHandler get value of metric by type and name
 func (h *Handler) GetByURLParamHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		MetricType := chi.URLParam(r, "MetricType")
@@ -41,6 +42,7 @@ func (h *Handler) GetByURLParamHandler() http.HandlerFunc {
 	}
 }
 
+// GetHandler get metric by json
 func (h *Handler) GetHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metric := common.Metrics{}

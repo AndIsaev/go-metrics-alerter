@@ -9,10 +9,12 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
+// PgStorage storage in postgresql
 type PgStorage struct {
 	db *sqlx.DB
 }
 
+// NewPgStorage init new storage
 func NewPgStorage(connString string) (*PgStorage, error) {
 	conn, err := sqlx.Connect("pgx", connString)
 	if err != nil {

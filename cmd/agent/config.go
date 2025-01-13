@@ -10,18 +10,28 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 )
 
+// Config use for setting agent application
 type Config struct {
-	Address              string        `env:"ADDRESS"`
-	ReportInterval       time.Duration `env:"REPORT_INTERVAL"`
-	PollInterval         time.Duration `env:"POLL_INTERVAL"`
-	Key                  string        `env:"KEY"`
-	RateLimit            uint64        `env:"RATE_LIMIT"`
-	StorageMetrics       *metrics.StorageMetrics
-	UpdateMetricAddress  string
+	// Address is host for application
+	Address string `env:"ADDRESS"`
+	// ReportInterval set interval sending metrics to server
+	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
+	// PollInterval how often to update metrics
+	PollInterval time.Duration `env:"POLL_INTERVAL"`
+	// Key secret key for connect to server
+	Key string `env:"KEY"`
+	// RateLimit limit connections to server
+	RateLimit uint64 `env:"RATE_LIMIT"`
+	// StorageMetrics storage with metrics
+	StorageMetrics *metrics.StorageMetrics
+	// UpdateMetricAddress address for update one metric
+	UpdateMetricAddress string
+	// UpdateMetricsAddress address for update batch with metrics
 	UpdateMetricsAddress string
 	ProtocolHTTP         string
 }
 
+// NewConfig create new config
 func NewConfig() *Config {
 	cfg := &Config{StorageMetrics: metrics.NewListMetrics(), ProtocolHTTP: "http"}
 	var pollIntervalSeconds uint64

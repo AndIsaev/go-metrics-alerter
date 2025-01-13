@@ -79,7 +79,7 @@ func TestMemStorage_GetByNameType(t *testing.T) {
 	}
 }
 
-func TestMemStorage_Create(t *testing.T) {
+func TestMemStorage_create(t *testing.T) {
 	delta := int64Ptr(100)
 	value := float64Ptr(12.34)
 	inMemStorage := NewMemStorage(nil, false)
@@ -109,15 +109,15 @@ func TestMemStorage_Create(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := inMemStorage.Create(context.Background(), tt.want)
+			err := inMemStorage.create(context.Background(), tt.want)
 			if !errors.Is(err, tt.wantErr) {
-				t.Errorf("MemStorage.Create() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("MemStorage.create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			got, err := inMemStorage.GetByNameType(context.Background(), tt.mName, tt.mType)
 			if (err == nil) && (got != tt.want) {
-				t.Errorf("MemStorage.Create() = %v, want %v", got, tt.want)
+				t.Errorf("MemStorage.create() = %v, want %v", got, tt.want)
 			}
 		})
 	}

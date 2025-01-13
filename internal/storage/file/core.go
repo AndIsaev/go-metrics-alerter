@@ -7,12 +7,14 @@ import (
 	"os"
 )
 
+// FileManager manage file on disk
 type FileManager struct {
 	file     *os.File
 	producer *json.Encoder
 	consumer *json.Decoder
 }
 
+// NewFileManager init FileManager
 func NewFileManager(path string) (*FileManager, error) {
 	log.Printf("init file manager")
 

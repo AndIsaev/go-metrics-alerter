@@ -15,6 +15,7 @@ import (
 var memStats runtime.MemStats
 var pollCount int64
 
+// StorageMetric stores metric parameters
 type StorageMetric struct {
 	ID    string
 	MType string
@@ -22,10 +23,12 @@ type StorageMetric struct {
 	Delta *int64
 }
 
+// StorageMetrics stores map of metrics
 type StorageMetrics struct {
 	Metrics map[string]StorageMetric
 }
 
+// NewListMetrics init storage metrics
 func NewListMetrics() *StorageMetrics {
 	return &StorageMetrics{make(map[string]StorageMetric)}
 }
@@ -34,6 +37,7 @@ func getAddress(f float64) *float64 {
 	return &f
 }
 
+// Pull get metrics
 func (listMetrics *StorageMetrics) Pull() {
 	vmStat, err := mem.VirtualMemory()
 	if err != nil {
@@ -85,8 +89,4 @@ func (listMetrics *StorageMetrics) Pull() {
 	listMetrics.Metrics["MCacheSys"] = StorageMetric{ID: "MCacheSys", MType: common.Gauge, Value: getAddress(float64(memStats.MCacheSys))}
 	listMetrics.Metrics["RandomValue"] = StorageMetric{ID: "RandomValue", MType: common.Gauge, Value: getAddress(float64(rand.Int()))}
 	listMetrics.Metrics["PollCount"] = StorageMetric{ID: "PollCount", MType: common.Counter, Delta: &pollCount}
-}
-
-func (listMetrics *StorageMetrics) AddMetric(metric StorageMetric) {
-	listMetrics.Metrics[metric.ID] = metric
 }

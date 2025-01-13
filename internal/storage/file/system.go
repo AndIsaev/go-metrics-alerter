@@ -8,6 +8,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
+// CreateDir create dir
 func (fm *FileManager) CreateDir(fileStoragePath string) error {
 	if _, err := os.Stat(fileStoragePath); os.IsNotExist(err) {
 		if err = os.Mkdir(fileStoragePath, 0755); err != nil {
@@ -19,6 +20,7 @@ func (fm *FileManager) CreateDir(fileStoragePath string) error {
 	return nil
 }
 
+// Overwrite save metrics in disc
 func (fm *FileManager) Overwrite(newData []common.Metrics) error {
 	fm.file.Close()
 	fullPath := fm.file.Name()
@@ -38,6 +40,7 @@ func (fm *FileManager) Overwrite(newData []common.Metrics) error {
 	return nil
 }
 
+// ReadFile read from file
 func (fm *FileManager) ReadFile() ([]common.Metrics, error) {
 	var result []common.Metrics
 	if err := fm.consumer.Decode(&result); err != nil {

@@ -40,11 +40,11 @@ func (p *PgStorage) UpsertByValue(ctx context.Context, metric common.Metrics, me
 	switch metric.MType {
 	case common.Gauge:
 		existsMetric.Value = &newValue.FloatValue
-		return p.Create(ctx, existsMetric)
+		return p.create(ctx, existsMetric)
 
 	case common.Counter:
 		existsMetric.Delta = &newValue.IntValue
-		return p.Create(ctx, existsMetric)
+		return p.create(ctx, existsMetric)
 	}
 
 	return nil
@@ -60,19 +60,6 @@ func (p *PgStorage) GetByName(ctx context.Context, name string) (common.Metrics,
 	}
 
 	return result, nil
-}
-
-func (p *PgStorage) Create(ctx context.Context, metric common.Metrics) error {
-	query := `insert into metric (id, type, delta, value)
-					values ($1, $2, $3, $4) on conflict (id)
-					do update set delta = metric.delta + $3, value = $4;`
-
-	_, err := p.db.ExecContext(ctx, query, metric.ID, metric.MType, metric.Delta, metric.Value)
-	if err != nil {
-		log.Println("error insert row to pg")
-		return err
-	}
-	return nil
 }
 
 func (p *PgStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) error {
@@ -156,4 +143,17 @@ func (p *PgStorage) Insert(ctx context.Context, metric common.Metrics) (common.M
 	}
 
 	return metric, nil
+}
+
+func (p *PgStorage) create(ctx context.Context, metric common.Metrics) error {
+	query := `insert into metric (id, type, delta, value)
+					values ($1, $2, $3, $4) on conflict (id)
+					do update set delta = metric.delta + $3, value = $4;`
+
+	_, err := p.db.ExecContext(ctx, query, metric.ID, metric.MType, metric.Delta, metric.Value)
+	if err != nil {
+		log.Println("error insert row to pg")
+		return err
+	}
+	return nil
 }

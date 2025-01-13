@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// IndexHandler main page
 func (h *Handler) IndexHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")

@@ -8,15 +8,23 @@ import (
 	"time"
 )
 
+// Config use for setting server application
 type Config struct {
-	Address         string        `env:"ADDRESS"`
-	StoreInterval   time.Duration `env:"STORE_INTERVAL"`
-	FileStoragePath string        `env:"FILE_STORAGE_PATH"`
-	Restore         bool          `env:"RESTORE"`
-	Dsn             string        `env:"DATABASE_DSN"`
-	Key             string        `env:"KEY"`
+	// Address is host for application
+	Address string `env:"ADDRESS"`
+	// StoreInterval interval for save metrics on file
+	StoreInterval time.Duration `env:"STORE_INTERVAL"`
+	// FileStoragePath path of metrics on disk
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	// Restore load metrics from file when start app
+	Restore bool `env:"RESTORE"`
+	// Dsn database dsn
+	Dsn string `env:"DATABASE_DSN"`
+	// Key for access to metrics
+	Key string `env:"KEY"`
 }
 
+// NewConfig create new config
 func NewConfig() *Config {
 	cfg := &Config{}
 	var storeInterval uint64

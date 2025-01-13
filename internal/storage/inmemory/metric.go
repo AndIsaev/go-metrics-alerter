@@ -8,7 +8,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
-// UpsertByValue - method create new value or update exists value in map
 func (m *MemStorage) UpsertByValue(ctx context.Context, metric common.Metrics, metricValue any) error {
 	newValue := storage.MetricValue{}
 	if err := newValue.Set(metric.MType, metricValue); err != nil {
@@ -18,17 +17,17 @@ func (m *MemStorage) UpsertByValue(ctx context.Context, metric common.Metrics, m
 	switch metric.MType {
 	case common.Gauge:
 		metric.Value = &newValue.FloatValue
-		return m.Create(ctx, metric)
+		return m.create(ctx, metric)
 
 	case common.Counter:
 		existsMetric, err := m.GetByName(ctx, metric.ID)
 		if err != nil {
 			metric.Delta = &newValue.IntValue
-			return m.Create(ctx, metric)
+			return m.create(ctx, metric)
 		}
 		newVal := *existsMetric.Delta + newValue.IntValue
 		existsMetric.Delta = &newVal
-		return m.Create(ctx, existsMetric)
+		return m.create(ctx, existsMetric)
 	}
 
 	return storage.ErrMetricValue
@@ -53,30 +52,20 @@ func (m *MemStorage) GetByName(_ context.Context, name string) (common.Metrics, 
 	return metric, nil
 }
 
-func (m *MemStorage) Create(ctx context.Context, metric common.Metrics) error {
-	m.Metrics[metric.ID] = metric
-	err := m.saveMetricsToDisc(ctx)
-	if err != nil {
-		log.Println("error save metrics to disc")
-		return err
-	}
-	return nil
-}
-
 func (m *MemStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) error {
 	for _, metric := range metrics {
 		switch metric.MType {
 		case common.Gauge:
-			_ = m.Create(ctx, metric)
+			_ = m.create(ctx, metric)
 		case common.Counter:
 			existsMetric, err := m.GetByName(ctx, metric.ID)
 			if err != nil {
-				_ = m.Create(ctx, metric)
+				_ = m.create(ctx, metric)
 				break
 			}
 			newVal := *existsMetric.Delta + *metric.Delta
 			existsMetric.Delta = &newVal
-			_ = m.Create(ctx, existsMetric)
+			_ = m.create(ctx, existsMetric)
 		}
 	}
 
@@ -107,6 +96,16 @@ func (m *MemStorage) Insert(ctx context.Context, metric common.Metrics) (common.
 	}
 
 	return metric, nil
+}
+
+func (m *MemStorage) create(ctx context.Context, metric common.Metrics) error {
+	m.Metrics[metric.ID] = metric
+	err := m.saveMetricsToDisc(ctx)
+	if err != nil {
+		log.Println("error save metrics to disc")
+		return err
+	}
+	return nil
 }
 
 func (m *MemStorage) saveMetricsToDisc(ctx context.Context) error {

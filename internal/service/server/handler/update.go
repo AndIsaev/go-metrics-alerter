@@ -10,6 +10,7 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
+// SetMetricHandler set value for metric by params
 func (h *Handler) SetMetricHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		MetricType := chi.URLParam(r, "MetricType")
@@ -36,7 +37,7 @@ func (h *Handler) SetMetricHandler() http.HandlerFunc {
 	}
 }
 
-// UpdateRowHandler - upsert metric
+// UpdateRowHandler - set value for one metric by json
 func (h *Handler) UpdateRowHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metric := common.Metrics{}
@@ -48,7 +49,7 @@ func (h *Handler) UpdateRowHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if ok := metric.IsValid(); !ok {
+		if metric.IsValidType() && metric.IsValidValue() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -67,6 +68,7 @@ func (h *Handler) UpdateRowHandler() http.HandlerFunc {
 	}
 }
 
+// UpdateBatchHandler set metrics by batch
 func (h *Handler) UpdateBatchHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metrics := make([]common.Metrics, 0)

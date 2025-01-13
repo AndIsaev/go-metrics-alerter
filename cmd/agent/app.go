@@ -18,15 +18,18 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 )
 
-// AgentApp - structure of application
+// AgentApp structure of application
 type AgentApp struct {
+	// Config use for settings of app
 	Config *Config
+	// Client use for requests to server
 	Client *resty.Client
 	mu     sync.RWMutex
 	wg     sync.WaitGroup
 	jobs   chan metrics.StorageMetrics
 }
 
+// New create and return new AgentApp
 func New() *AgentApp {
 	app := &AgentApp{}
 	config := NewConfig()
@@ -35,6 +38,7 @@ func New() *AgentApp {
 	return app
 }
 
+// StartApp user for start application
 func (a *AgentApp) StartApp() {
 	a.Client = a.initHTTPClient()
 	a.jobs = make(chan metrics.StorageMetrics)
@@ -48,7 +52,7 @@ func (a *AgentApp) initHTTPClient() *resty.Client {
 	cli := resty.New()
 	cli.SetTimeout(time.Second * 5)
 	cli.OnBeforeRequest(middleware.GzipRequestMiddleware)
-	cli.OnBeforeRequest(a.HashMiddleware)
+	cli.OnBeforeRequest(a.hashMiddleware)
 	return cli
 }
 
@@ -94,7 +98,7 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 						log.Printf("jobs channel closed")
 						return
 					}
-					if err := utils.Retry(a.SendMetrics)(m); err != nil {
+					if err := utils.Retry(a.sendMetrics)(m); err != nil {
 						log.Printf("Error sending metrics: %v", err)
 					}
 				}
@@ -103,7 +107,7 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 	}
 }
 
-func (a *AgentApp) SendMetrics(m metrics.StorageMetrics) error {
+func (a *AgentApp) sendMetrics(m metrics.StorageMetrics) error {
 	values := make([]common.Metrics, 0, len(m.Metrics))
 	var result common.Metrics
 
@@ -130,7 +134,7 @@ func (a *AgentApp) SendMetrics(m metrics.StorageMetrics) error {
 	return nil
 }
 
-func (a *AgentApp) HashMiddleware(c *resty.Client, r *resty.Request) error {
+func (a *AgentApp) hashMiddleware(c *resty.Client, r *resty.Request) error {
 	if a.Config.Key == "" {
 		return nil
 	}

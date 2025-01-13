@@ -8,15 +8,25 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
+// Service provider methods of storage
 type Service interface {
+	// PingStorage ping storage
 	PingStorage(ctx context.Context) error
+	// CloseStorage close storage connect
 	CloseStorage(ctx context.Context) error
+	// RunMigrationsStorage run migrations before start app
 	RunMigrationsStorage(ctx context.Context) error
+	// ListMetrics get list metrics
 	ListMetrics(ctx context.Context) ([]common.Metrics, error)
+	// UpdateMetricByValue update metric by value
 	UpdateMetricByValue(ctx context.Context, metric common.Metrics, value any) error
+	// GetMetricByName get metric by name
 	GetMetricByName(ctx context.Context, name string) (common.Metrics, error)
+	// GetMetricByNameType get metric by type and name
 	GetMetricByNameType(ctx context.Context, name, mType string) (common.Metrics, error)
+	// InsertMetric insert one row
 	InsertMetric(ctx context.Context, metric common.Metrics) (common.Metrics, error)
+	// InsertMetrics insert batch
 	InsertMetrics(ctx context.Context, metrics []common.Metrics) error
 }
 
