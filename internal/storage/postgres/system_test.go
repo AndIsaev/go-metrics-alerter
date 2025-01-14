@@ -2,8 +2,9 @@ package postgres
 
 import (
 	"database/sql"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPgStorage_Ping(t *testing.T) {
@@ -35,7 +36,6 @@ func TestPgStorage_Ping(t *testing.T) {
 			got := s.System().Ping(ts.ctx)
 
 			assert.Equal(t, tt.want, got)
-
 		})
 	}
 }
@@ -69,7 +69,6 @@ func TestPgStorage_Close(t *testing.T) {
 			got := s.System().Close(ts.ctx)
 
 			assert.Equal(t, tt.want, got)
-
 		})
 	}
 }
@@ -103,7 +102,6 @@ func TestPgStorage_RunMigrations(t *testing.T) {
 			got := s.System().RunMigrations(ts.ctx)
 
 			assert.Equal(t, tt.want, got)
-
 		})
 	}
 }
