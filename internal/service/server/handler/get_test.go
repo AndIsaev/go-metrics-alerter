@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 
 	"github.com/go-chi/chi"
 )
