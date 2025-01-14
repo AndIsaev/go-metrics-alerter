@@ -8,52 +8,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/go-chi/chi"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
-
-// MockMetricService - это макетный сервис для тестирования
-type MockMetricService struct{}
-
-func linkFloat64(num float64) *float64 {
-	return &num
-}
-func (m *MockMetricService) InsertMetrics(_ context.Context, _ []common.Metrics) error {
-	return nil
-}
-
-func (m *MockMetricService) PingStorage(_ context.Context) error {
-	return nil
-}
-func (m *MockMetricService) CloseStorage(_ context.Context) error {
-	return nil
-}
-func (m *MockMetricService) RunMigrationsStorage(_ context.Context) error {
-	return nil
-}
-
-func (m *MockMetricService) ListMetrics(_ context.Context) ([]common.Metrics, error) {
-	return []common.Metrics{}, nil
-}
-
-func (m *MockMetricService) UpdateMetricByValue(_ context.Context, _ common.Metrics, _ any) error {
-	return nil
-}
-
-func (m *MockMetricService) GetMetricByName(_ context.Context, _ string) (common.Metrics, error) {
-	return common.Metrics{}, nil
-}
-
-func (m *MockMetricService) GetMetricByNameType(_ context.Context, _ string, _ string) (common.Metrics, error) {
-	return common.Metrics{}, nil
-}
-
-func (m *MockMetricService) InsertMetric(_ context.Context, _ common.Metrics) (common.Metrics, error) {
-	return common.Metrics{
-		ID:    "metric1",
-		MType: "counter",
-		Value: linkFloat64(123.45),
-	}, nil
-}
 
 func ExampleHandler_UpdateBatchHandler() {
 	// Создание инстанса вашего хендлера
@@ -121,4 +79,32 @@ func ExampleHandler_UpdateRowHandler() {
 	// Output:
 	// Status Code: 200
 	// Response Body: {"id":"metric1","type":"counter","value":123.45}
+}
+
+func ExampleHandler_SetMetricHandler() {
+	// Создаем новый хендлер с макетным MetricService
+	h := &Handler{
+		MetricService: &MockMetricService{},
+	}
+
+	// Создаем пример HTTP-запроса с заданными параметрами URL
+	req := httptest.NewRequest("POST", "/update/gauge/temperature/23.5", nil)
+	rr := httptest.NewRecorder()
+
+	// Используем chi.Router параметры в запросе
+	chiCtx := chi.NewRouteContext()
+	chiCtx.URLParams.Add("MetricType", "gauge")
+	chiCtx.URLParams.Add("MetricName", "metric1")
+	chiCtx.URLParams.Add("MetricValue", "23.5")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
+
+	// Вызываем хендлер с искусственным запросом.
+	handler := h.SetMetricHandler()
+	handler.ServeHTTP(rr, req)
+
+	// Выводим результирующий HTTP статус-код
+	fmt.Println("Status Code:", rr.Code)
+
+	// Output:
+	// Status Code: 200
 }
