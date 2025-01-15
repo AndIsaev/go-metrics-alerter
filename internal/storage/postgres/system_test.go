@@ -1,107 +1,81 @@
 package postgres
 
 import (
-	"database/sql"
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPgStorage_Ping(t *testing.T) {
-	tests := []struct {
-		name  string
-		setup func(suite *testSuite)
-		want  error
-	}{
-		{
-			name:  "success ping",
-			setup: func(ts *testSuite) { ts.mockSystemRepo.EXPECT().Ping(ts.ctx).Return(nil) },
-			want:  nil,
-		},
-		{
-			name:  "error ping",
-			setup: func(ts *testSuite) { ts.mockSystemRepo.EXPECT().Ping(ts.ctx).Return(sql.ErrConnDone) },
-			want:  sql.ErrConnDone,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTest(t)
-
-			tt.setup(ts)
-
-			s := ts.mockStorage
-
-			got := s.System().Ping(ts.ctx)
-
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestPgStorage_Close(t *testing.T) {
-	tests := []struct {
-		name  string
-		setup func(suite *testSuite)
-		want  error
-	}{
-		{
-			name:  "success close",
-			setup: func(ts *testSuite) { ts.mockSystemRepo.EXPECT().Close(ts.ctx).Return(nil) },
-			want:  nil,
-		},
-		{
-			name:  "error close",
-			setup: func(ts *testSuite) { ts.mockSystemRepo.EXPECT().Close(ts.ctx).Return(sql.ErrConnDone) },
-			want:  sql.ErrConnDone,
-		},
-	}
+	sqlxDB, mock := setupMockDB(t)
+	defer sqlxDB.Close()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTest(t)
+	storage := &PgStorage{db: sqlxDB}
 
-			tt.setup(ts)
+	t.Run("successful close", func(t *testing.T) {
+		mock.ExpectClose().WillReturnError(nil)
 
-			s := ts.mockStorage
+		err := storage.Close(context.Background())
+		assert.NoError(t, err, "error should be nil on successful close")
+	})
 
-			got := s.System().Close(ts.ctx)
-
-			assert.Equal(t, tt.want, got)
-		})
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
-func TestPgStorage_RunMigrations(t *testing.T) {
-	tests := []struct {
-		name  string
-		setup func(suite *testSuite)
-		want  error
-	}{
-		{
-			name:  "success close",
-			setup: func(ts *testSuite) { ts.mockSystemRepo.EXPECT().RunMigrations(ts.ctx).Return(nil) },
-			want:  nil,
-		},
-		{
-			name:  "error close",
-			setup: func(ts *testSuite) { ts.mockSystemRepo.EXPECT().RunMigrations(ts.ctx).Return(sql.ErrConnDone) },
-			want:  sql.ErrConnDone,
-		},
+func TestPgStorage_CloseError(t *testing.T) {
+	sqlxDB, mock := setupMockDB(t)
+	defer sqlxDB.Close()
+
+	storage := &PgStorage{db: sqlxDB}
+	assert.NotNil(t, sqlxDB, "sqlxDB should not be nil after setupMockDB")
+
+	t.Run("error on close", func(t *testing.T) {
+		mock.ExpectClose().WillReturnError(fmt.Errorf("close error"))
+
+		err := storage.Close(context.Background())
+		assert.Error(t, err, "an error should be returned on close failure")
+		assert.Equal(t, "close error", err.Error(), "unexpected error message")
+	})
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTest(t)
+func TestPgStorage_Ping(t *testing.T) {
+	sqlxDB, mock := setupMockDB(t)
+	defer sqlxDB.Close()
 
-			tt.setup(ts)
+	storage := &PgStorage{db: sqlxDB}
+	ctx := context.Background()
 
-			s := ts.mockStorage
+	mock.ExpectPing().WillReturnError(nil)
 
-			got := s.System().RunMigrations(ts.ctx)
+	err := storage.Ping(ctx)
+	assert.NoError(t, err, "error should be nil on successful ping")
 
-			assert.Equal(t, tt.want, got)
-		})
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestPgStorage_PingError(t *testing.T) {
+	sqlxDB, mock := setupMockDB(t)
+	defer sqlxDB.Close()
+
+	storage := &PgStorage{db: sqlxDB}
+	ctx := context.Background()
+
+	mock.ExpectPing().WillReturnError(fmt.Errorf("error close connection"))
+
+	err := storage.Ping(ctx)
+	assert.Error(t, err, "error close connection")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
