@@ -291,6 +291,66 @@ func TestPgStorage_InsertBatchBeginError(t *testing.T) {
 	}
 }
 
+func TestPgStorage_InsertBatchExecError(t *testing.T) {
+	sqlxDB, mock := setupMockDB(t)
+	defer sqlxDB.Close()
+
+	storage := &PgStorage{db: sqlxDB}
+	ctx := context.Background()
+
+	metrics := []common.Metrics{
+		{
+			ID:    "metric1",
+			MType: common.Gauge,
+			Value: linkFloat64(42.0),
+		},
+		{
+			ID:    "metric2",
+			MType: common.Counter,
+			Delta: linkInt64(10),
+		},
+	}
+	mock.ExpectBegin()
+	mock.ExpectPrepare(`insert into metric`).
+		ExpectExec().WillReturnError(fmt.Errorf("execute statement error"))
+
+	err := storage.InsertBatch(ctx, metrics)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to execute statement")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestPgStorage_InsertBatchCommitError(t *testing.T) {
+	sqlxDB, mock := setupMockDB(t)
+	defer sqlxDB.Close()
+
+	storage := &PgStorage{db: sqlxDB}
+	ctx := context.Background()
+
+	metrics := []common.Metrics{
+		{
+			ID:    "metric1",
+			MType: common.Gauge,
+			Value: linkFloat64(42.0),
+		},
+	}
+	mock.ExpectBegin()
+	mock.ExpectPrepare(`insert into metric`).ExpectExec().WithArgs(metrics[0].ID, metrics[0].MType, sqlmock.AnyArg(), metrics[0].Value).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit().WillReturnError(fmt.Errorf("failed to commit transaction"))
+
+	err := storage.InsertBatch(ctx, metrics)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to commit transaction")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
 func TestPgStorage_UpsertByValue(t *testing.T) {
 	sqlxDB, mock := setupMockDB(t)
 	defer sqlxDB.Close()
