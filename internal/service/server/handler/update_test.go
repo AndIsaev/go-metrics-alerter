@@ -50,26 +50,20 @@ func ExampleHandler_UpdateBatchHandler() {
 }
 
 func ExampleHandler_UpdateRowHandler() {
-	// Создание инстанса вашего хендлера
 	h := &Handler{
 		MetricService: &MockMetricService{},
 	}
 
-	// Массив метрик для отправки
 	metric := common.Metrics{ID: "metric1", MType: "counter", Value: new(float64)}
 	*metric.Value = 123.45
 
-	// Кодирование метрик в JSON
 	requestBody, _ := json.Marshal(metric)
 
-	// Создание нового HTTP-запроса
 	req, _ := http.NewRequest("POST", "/update", bytes.NewBuffer(requestBody))
 	req.Header.Set("Content-Type", "application/json")
 
-	// Создание ResponseRecorder для получения HTTP-ответа
 	rr := httptest.NewRecorder()
 
-	// Вызов хендлера с созданным запросом
 	handler := h.UpdateRowHandler()
 	handler.ServeHTTP(rr, req)
 
@@ -82,27 +76,22 @@ func ExampleHandler_UpdateRowHandler() {
 }
 
 func ExampleHandler_SetMetricHandler() {
-	// Создаем новый хендлер с макетным MetricService
 	h := &Handler{
 		MetricService: &MockMetricService{},
 	}
 
-	// Создаем пример HTTP-запроса с заданными параметрами URL
 	req := httptest.NewRequest("POST", "/update/gauge/temperature/23.5", nil)
 	rr := httptest.NewRecorder()
 
-	// Используем chi.Router параметры в запросе
 	chiCtx := chi.NewRouteContext()
 	chiCtx.URLParams.Add("MetricType", "gauge")
 	chiCtx.URLParams.Add("MetricName", "metric1")
 	chiCtx.URLParams.Add("MetricValue", "23.5")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 
-	// Вызываем хендлер с искусственным запросом.
 	handler := h.SetMetricHandler()
 	handler.ServeHTTP(rr, req)
 
-	// Выводим результирующий HTTP статус-код
 	fmt.Println("Status Code:", rr.Code)
 
 	// Output:
