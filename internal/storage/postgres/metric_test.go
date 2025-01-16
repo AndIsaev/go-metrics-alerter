@@ -262,6 +262,35 @@ func TestPgStorage_InsertBatch(t *testing.T) {
 	}
 }
 
+func TestPgStorage_InsertBatchBeginError(t *testing.T) {
+	sqlxDB, mock := setupMockDB(t)
+	defer sqlxDB.Close()
+
+	storage := &PgStorage{db: sqlxDB}
+	ctx := context.Background()
+
+	metrics := []common.Metrics{
+		{
+			ID:    "metric1",
+			MType: common.Gauge,
+			Value: linkFloat64(42.0),
+		},
+		{
+			ID:    "metric2",
+			MType: common.Counter,
+			Delta: linkInt64(10),
+		},
+	}
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("begin transaction error"))
+	err := storage.InsertBatch(ctx, metrics)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to begin transaction")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
 func TestPgStorage_UpsertByValue(t *testing.T) {
 	sqlxDB, mock := setupMockDB(t)
 	defer sqlxDB.Close()
