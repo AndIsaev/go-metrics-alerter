@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/go-resty/resty/v2"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 func TestSendMetricHandler(t *testing.T) {
