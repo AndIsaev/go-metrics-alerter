@@ -143,6 +143,33 @@ func TestPgStorage_Insert(t *testing.T) {
 	}
 }
 
+func TestPgStorage_InsertError(t *testing.T) {
+	sqlxDB, mock := setupMockDB(t)
+	defer sqlxDB.Close()
+
+	storage := &PgStorage{db: sqlxDB}
+	ctx := context.Background()
+
+	inputMetric := common.Metrics{
+		ID:    "metric1",
+		MType: common.Gauge,
+		Value: linkFloat64(42.0),
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`(?i)INSERT INTO metric \(id, type, delta, value\) VALUES \(\$1, \$2, \$3, \$4\) ON CONFLICT \(id\) DO UPDATE SET delta = metric\.delta \+ EXCLUDED\.delta, value = EXCLUDED\.value RETURNING id, type, delta, value;`).
+		WithArgs(inputMetric.ID, inputMetric.MType, inputMetric.Delta, inputMetric.Value).
+		WillReturnError(fmt.Errorf("error insert row to pg"))
+
+	_, err := storage.Insert(ctx, inputMetric)
+
+	assert.Error(t, err, "error insert row to pg")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
 func TestPgStorage_create(t *testing.T) {
 	sqlxDB, mock := setupMockDB(t)
 	defer sqlxDB.Close()
