@@ -10,7 +10,7 @@ import (
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 
-	_ "github.com/lib/pq" // Если используете PostgreSQL
+	_ "github.com/lib/pq"
 )
 
 func TestPgStorage_List(t *testing.T) {
