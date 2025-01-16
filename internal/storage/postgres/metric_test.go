@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -162,6 +163,32 @@ func TestPgStorage_create(t *testing.T) {
 	err := storage.create(ctx, inputMetric)
 
 	assert.NoError(t, err)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestPgStorage_createError(t *testing.T) {
+	sqlxDB, mock := setupMockDB(t)
+	defer sqlxDB.Close()
+
+	storage := &PgStorage{db: sqlxDB}
+	ctx := context.Background()
+
+	inputMetric := common.Metrics{
+		ID:    "metric1",
+		MType: common.Gauge,
+		Value: linkFloat64(42.0),
+	}
+
+	mock.ExpectExec(`(?i)insert into metric \(id, type, delta, value\) values \(\$1, \$2, \$3, \$4\) on conflict \(id\) do update set delta = metric\.delta \+ \$3, value = \$4;`).
+		WithArgs(inputMetric.ID, inputMetric.MType, inputMetric.Delta, inputMetric.Value).
+		WillReturnError(fmt.Errorf("error insert row to pg"))
+
+	err := storage.create(ctx, inputMetric)
+
+	assert.Error(t, err, "error insert row to pg")
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
