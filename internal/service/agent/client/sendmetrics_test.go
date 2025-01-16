@@ -1,58 +1,67 @@
 package client
 
 import (
+	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"github.com/go-resty/resty/v2"
+	"github.com/jarcoal/httpmock"
+	"github.com/stretchr/testify/assert"
 )
 
-func StartMockServer(t *testing.T, responses map[string][]byte) *httptest.Server {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if response, ok := responses[r.URL.Path]; ok {
-			w.WriteHeader(http.StatusOK)
-			w.Write(response)
-		} else {
-			w.WriteHeader(http.StatusNotFound)
-		}
-	}))
-	t.Cleanup(func() { ts.Close() })
-	return ts
-}
+func TestSendMetricHandler(t *testing.T) {
+	client := resty.New()
 
-func TestSendMetricsClient(t *testing.T) {
-	responses := make(map[string][]byte)
-	responses["/update/counter/pollCount/1"] = []byte{}
-	c := resty.New()
+	httpmock.ActivateNonDefault(client.GetClient())
+	defer httpmock.DeactivateAndReset()
 
-	mockServer := StartMockServer(t, responses)
-	defer mockServer.Close()
-
-	type want struct {
-		url         string
-		contentType string
-		body        common.Metrics
-		status      int
-		method      string
-	}
 	tests := []struct {
-		name string
-		want want
+		name        string
+		mockSetup   func()
+		expectedErr error
 	}{
-		{name: "success test #1", want: want{url: mockServer.URL + `/update/counter/pollCount/1`, contentType: "text/plain", body: common.Metrics{}, status: http.StatusOK, method: http.MethodPost}},
+		{
+			name: "successful request",
+			mockSetup: func() {
+				httpmock.RegisterResponder("POST", "http://example.com/metrics",
+					httpmock.NewStringResponder(http.StatusOK, `{}`))
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "unexpected status code",
+			mockSetup: func() {
+				httpmock.RegisterResponder("POST", "http://example.com/metrics",
+					httpmock.NewStringResponder(http.StatusBadRequest, `{}`))
+			},
+			expectedErr: fmt.Errorf("unexpected status code: 400"),
+		},
+		{
+			name: "network error",
+			mockSetup: func() {
+				httpmock.RegisterNoResponder(
+					httpmock.ConnectionFailure)
+			},
+			expectedErr: fmt.Errorf("unexpected status code: 400"),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp := httptest.NewRecorder()
-			err := SendMetricHandler(c, tt.want.url, tt.want.body)
+			tt.mockSetup()
 
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want.status, resp.Code)
+			body := common.Metrics{ /* инициализируйте по необходимости */ }
+
+			err := SendMetricHandler(client, "http://example.com/metrics", body)
+
+			if tt.expectedErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedErr.Error(), err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }

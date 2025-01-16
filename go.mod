@@ -19,6 +19,7 @@ require (
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgtype v1.14.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/jarcoal/httpmock v1.3.1 // indirect
 )
 
 require (
