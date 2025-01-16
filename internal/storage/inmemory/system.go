@@ -15,7 +15,8 @@ func (m *MemStorage) Close(_ context.Context) error {
 
 func (m *MemStorage) Ping(_ context.Context) error {
 	if m.Metrics == nil {
-		log.Fatalln(storage.ErrMapNotAvailable)
+		log.Println(storage.ErrMapNotAvailable)
+		return storage.ErrMapNotAvailable
 	}
 	return nil
 }
