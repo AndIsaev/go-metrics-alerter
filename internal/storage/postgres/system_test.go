@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -78,4 +79,39 @@ func TestPgStorage_PingError(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
+}
+
+func TestPgStorage_RunMigrations(t *testing.T) {
+	t.Run("successful migration", func(t *testing.T) {
+		sqlxDB, mock := setupMockDB(t)
+		defer sqlxDB.Close()
+
+		mock.ExpectExec(`create table if not exists metric`).WillReturnResult(sqlmock.NewResult(1, 1))
+
+		storage := &PgStorage{db: sqlxDB}
+		err := storage.RunMigrations(context.Background())
+
+		assert.NoError(t, err, "error should be nil on successful migration")
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
+
+	t.Run("migration error", func(t *testing.T) {
+		sqlxDB, mock := setupMockDB(t)
+		defer sqlxDB.Close()
+
+		mock.ExpectExec(`create table if not exists metric`).WillReturnError(fmt.Errorf("migration failed"))
+
+		storage := &PgStorage{db: sqlxDB}
+		err := storage.RunMigrations(context.Background())
+
+		assert.Error(t, err, "error should occur on migration failure")
+		assert.Contains(t, err.Error(), "migration failed")
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %s", err)
+		}
+	})
 }
