@@ -2,6 +2,7 @@ package file
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -21,7 +22,7 @@ func NewFileManager(path string) (*FileManager, error) {
 	fullPath := fmt.Sprintf("%s/%s", path, "metrics.txt")
 	file, err := os.OpenFile(fullPath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return nil, err
+		return nil, errors.Unwrap(err)
 	}
 
 	fm := &FileManager{
