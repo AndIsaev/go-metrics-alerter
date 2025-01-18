@@ -34,7 +34,7 @@ func (m *MemStorage) UpsertByValue(ctx context.Context, metric common.Metrics, m
 }
 
 func (m *MemStorage) List(_ context.Context) ([]common.Metrics, error) {
-	var metrics []common.Metrics
+	metrics := make([]common.Metrics, 0, len(m.Metrics))
 	if m.Metrics == nil {
 		return nil, storage.ErrMapNotAvailable
 	}

@@ -63,7 +63,7 @@ func request(req *Req) (*Resp, error) {
 	switch req.rType {
 	case "get":
 		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			CheckRedirect: func(_ *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
 		}
@@ -113,8 +113,6 @@ func main() {
 		err := writeToFile(dir, metrics)
 		if err != nil {
 			log.Fatal("Ошибка при записи файла:", err)
-		} else {
-			log.Println("Файл успешно создан")
 		}
 	} else {
 		log.Println("файл уже был создан")
