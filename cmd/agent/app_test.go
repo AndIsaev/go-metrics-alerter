@@ -5,9 +5,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	_ "github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
-	_ "github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 )
 
 func TestInitHTTPClient(t *testing.T) {
