@@ -2,6 +2,7 @@ package file
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"os"
 
@@ -22,11 +23,11 @@ func (fm *FileManager) CreateDir(fileStoragePath string) error {
 
 // Overwrite save metrics in disc
 func (fm *FileManager) Overwrite(newData []common.Metrics) error {
-	fm.file.Close()
 	fullPath := fm.file.Name()
 	file, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
-		return err
+		log.Print(err)
+		return errors.Unwrap(err)
 	}
 	defer file.Close()
 
@@ -34,9 +35,8 @@ func (fm *FileManager) Overwrite(newData []common.Metrics) error {
 	err = fm.producer.Encode(newData)
 	if err != nil {
 		log.Printf("error save row to disc")
-		return err
+		return errors.Unwrap(err)
 	}
-
 	return nil
 }
 
@@ -45,7 +45,7 @@ func (fm *FileManager) ReadFile() ([]common.Metrics, error) {
 	var result []common.Metrics
 	if err := fm.consumer.Decode(&result); err != nil {
 		log.Println("warning read metrics from file")
-		return nil, err
+		return nil, errors.Unwrap(err)
 	}
 
 	return result, nil
@@ -55,7 +55,7 @@ func (fm *FileManager) Close() error {
 	err := fm.file.Close()
 	if err != nil {
 		log.Printf("error close file")
-		return err
+		return errors.Unwrap(err)
 	}
 	return nil
 }
