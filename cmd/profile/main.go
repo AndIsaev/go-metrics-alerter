@@ -63,7 +63,7 @@ func request(req *Req) (*Resp, error) {
 	switch req.rType {
 	case "get":
 		client := &http.Client{
-			CheckRedirect: func(_ *http.Request, via []*http.Request) error {
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
 		}
