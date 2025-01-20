@@ -6,9 +6,9 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
-
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
+	"net/http/pprof"
+	"sync"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -16,70 +16,53 @@ import (
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
-	"github.com/AndIsaev/go-metrics-alerter/internal/manager/file"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handlers"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handler"
 	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/file"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/inmemory"
+	"github.com/AndIsaev/go-metrics-alerter/internal/storage/postgres"
 )
 
 // ServerApp - structure of application
 type ServerApp struct {
-	Router       chi.Router
-	MemStorage   *storage.MemStorage
-	FileProducer *file.Producer
-	FileConsumer *file.Consumer
-	DBConn       storage.BaseStorage
-	Config       *server.Config
-	Server       *http.Server
+	Router  chi.Router
+	Conn    storage.Storage
+	Config  *Config
+	Server  *http.Server
+	Handler *handler.Handler
+	fm      *file.Manager
 }
 
 // New - create new app
 func New() *ServerApp {
 	app := &ServerApp{}
-	config := server.NewConfig()
-	app.Config = config
+	app.Config = NewConfig()
+	ctx := context.Background()
 
 	// init file storage
-	app.MemStorage = storage.NewMemStorage()
+	err := app.initStorage(ctx)
+	if err != nil {
+		log.Fatalf("error init storage%v\n", err.Error())
+	}
 
 	app.Router = chi.NewRouter()
+
+	app.Handler = &handler.Handler{}
+	app.Handler.MetricService = &server.Methods{Storage: app.Conn}
 
 	return app
 }
 
+// StartApp start application
 func (a *ServerApp) StartApp(ctx context.Context) error {
 	if err := logger.Initialize(); err != nil {
 		return err
 	}
-
-	if a.Config.DBDsn != "" {
-		// connect to DB
-		conn, err := storage.NewPostgresStorage(a.Config.DBDsn)
-		if err != nil {
-			return err
-		}
-
-		// создаем таблицы
-		if err := conn.Create(ctx); err != nil {
-			return err
-		}
-		a.DBConn = conn
-	}
-
-	// create directory
-	if err := createMetricsDir(a.Config.FileStoragePath); err != nil {
-		log.Printf("can't create directory because of: %s\n", err.Error())
-		return err
-	}
-	// set producer and consumer for file manager
-	if err := a.initFileManagers(); err != nil {
-		return err
-	}
-
-	// download metrics from disc to storage
-	if err := a.downloadMetrics(); err != nil {
-		return err
-	}
+	var wg sync.WaitGroup
+	var mu sync.RWMutex
+	chMetrics := make(chan []common.Metrics)
 
 	// init router
 	a.initRouter()
@@ -87,68 +70,61 @@ func (a *ServerApp) StartApp(ctx context.Context) error {
 	// init http server
 	a.initHTTPServer()
 
-	return a.startHTTPServer()
+	if a.fm != nil && a.Config.StoreInterval != 0 {
+		wg.Add(2)
+
+		go func(ctx context.Context, ch chan []common.Metrics) {
+			defer wg.Done()
+			for {
+				time.Sleep(a.Config.StoreInterval)
+				mu.RLock()
+				metrics, _ := a.Conn.Metric().List(ctx)
+				mu.RUnlock()
+				ch <- metrics
+			}
+		}(ctx, chMetrics)
+
+		go func() {
+			defer wg.Done()
+			for {
+				time.Sleep(a.Config.StoreInterval)
+				err := a.saveMetricsToDisc(chMetrics)
+				if err != nil {
+					log.Printf("error save metrics to disc")
+				}
+			}
+		}()
+	}
+	wg.Add(1)
+
+	go func() {
+		_ = a.startHTTPServer()
+	}()
+	wg.Wait()
+	return nil
 }
 
 // startHTTPServer - start http server
 func (a *ServerApp) startHTTPServer() error {
-	log.Printf("start server on: %s\n", a.Config.Address)
+	log.Printf("start server on %s\n", a.Config.Address)
 	return a.Server.ListenAndServe()
 }
 
 // initHTTPServer - init http server
 func (a *ServerApp) initHTTPServer() {
-	server := &http.Server{}
-	server.Handler = a.Router
-	server.Addr = a.Config.Address
-	a.Server = server
+	a.Server = &http.Server{Handler: a.Router, Addr: a.Config.Address}
 }
 
-// downloadMetrics - Read metrics from disk
-func (a *ServerApp) downloadMetrics() error {
-	if a.Config.Restore {
-		log.Println("read metrics from disk")
-		for {
-			m, err := a.FileConsumer.ReadMetrics()
-			if err != nil {
-				break
-			}
-			if err := a.MemStorage.Set(m); err != nil {
-				log.Printf("can't save metrics to local storage because of: %s\n", err.Error())
-				return err
-			}
-		}
-		log.Println("metrics downloaded")
-	}
-	return nil
-}
-
-// createMetricsDir - create directory for metrics
-func createMetricsDir(fileStoragePath string) error {
-	if _, err := os.Stat(fileStoragePath); os.IsNotExist(err) {
-		if err = os.Mkdir(fileStoragePath, 0755); err != nil {
-			log.Printf("the directory %s not created\n", fileStoragePath)
-			return err
-		}
-	}
-	log.Printf("the directory %s is done\n", fileStoragePath)
-	return nil
-}
-
+// Shutdown close connections
 func (a *ServerApp) Shutdown() {
-	if err := a.FileProducer.Close(); err != nil {
-		log.Printf("%s\n", err.Error())
+	ctx := context.Background()
+	if a.fm != nil {
+		a.fm.Close()
 	}
-	if err := a.FileConsumer.Close(); err != nil {
-		log.Printf("%s\n", err.Error())
-	}
-
-	if a.Config.DBDsn != "" {
-		if a.DBConn != nil {
-			if err := a.DBConn.Close(); err != nil {
-				log.Printf("%s\n", err.Error())
-			}
-		}
+	err := a.Conn.System().Close(ctx)
+	if err != nil {
+		log.Printf("error close storage: %v\n", err.Error())
+		return
 	}
 }
 
@@ -156,8 +132,7 @@ func (a *ServerApp) Shutdown() {
 func (a *ServerApp) initRouter() {
 	r := a.Router
 	r.Use(logger.RequestLogger, logger.ResponseLogger)
-	r.Use(middleware.StripSlashes)
-	r.Use(middleware.Recoverer)
+	r.Use(middleware.Recoverer, middleware.StripSlashes)
 	r.Use(middleware.SetHeader("Content-Type", "application/json"))
 
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
@@ -174,47 +149,41 @@ func (a *ServerApp) initRouter() {
 		w.Write(response)
 	})
 
+	r.HandleFunc("/debug/pprof", pprof.Index)
+	r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	r.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	r.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	r.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
+	r.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	r.Handle("/debug/pprof/block", pprof.Handler("block"))
+	r.Handle("/debug/pprof/allocs", pprof.Handler("allocs"))
+
 	// Routes
 	r.Group(func(r chi.Router) {
 		r.Use(mid.GzipMiddleware, a.secretMiddleware)
-		r.Post(`/updates`, handlers.UpdateBatchHandler(a.MemStorage, a.FileProducer, a.DBConn))
+		r.Post(`/updates`, a.Handler.UpdateBatchHandler())
 	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(mid.GzipMiddleware)
 
 		// Ping db connection
-		r.Get(`/ping`, handlers.PingHandler(a.DBConn))
+		r.Get(`/ping`, a.Handler.PingHandler())
 
-		// update
-		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, handlers.SetMetricHandler(a.MemStorage))
-		r.Post(`/update`, handlers.UpdateHandler(a.MemStorage, a.FileProducer, a.DBConn))
+		//// update
+		r.Post(`/update/{MetricType}/{MetricName}/{MetricValue}`, a.Handler.SetMetricHandler())
+		r.Post(`/update`, a.Handler.UpdateRowHandler())
 
 		// value
-		r.Get(`/value/{MetricType}/{MetricName}`, handlers.GetMetricHandler(a.MemStorage))
-		r.Post(`/value`, handlers.GetHandler(a.MemStorage, a.DBConn))
+		r.Get(`/value/{MetricType}/{MetricName}`, a.Handler.GetByURLParamHandler())
+		r.Post(`/value`, a.Handler.GetHandler())
 
 		// main page
-		r.Get(`/`, handlers.MainPageHandler(a.MemStorage))
+		r.Get(`/`, a.Handler.IndexHandler())
 	})
-}
-
-func (a *ServerApp) initFileManagers() error {
-	producer, err := file.NewProducer(a.Config.FileStoragePath)
-	if err != nil {
-		log.Printf("can't initialize FileProducer because of: %s\n", err.Error())
-		return err
-	}
-
-	consumer, err := file.NewConsumer(a.Config.FileStoragePath)
-	if err != nil {
-		log.Printf("can't initialize FileConsumer because of: %s\n", err.Error())
-		return err
-	}
-
-	a.FileProducer = producer
-	a.FileConsumer = consumer
-	return nil
 }
 
 func (a *ServerApp) secretMiddleware(next http.Handler) http.Handler {
@@ -235,7 +204,7 @@ func (a *ServerApp) secretMiddleware(next http.Handler) http.Handler {
 			serverSha256sum := common.Sha256sum(body, a.Config.Key)
 
 			if agentSha256sum != serverSha256sum {
-				log.Printf("compare hash is not success")
+				log.Println("compare hash is not success")
 				rw.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -244,4 +213,59 @@ func (a *ServerApp) secretMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(rw, r)
 	})
+}
+
+func (a *ServerApp) initStorage(ctx context.Context) error {
+	if a.Config.Dsn != "" {
+		conn, err := postgres.NewPgStorage(a.Config.Dsn)
+		if err != nil {
+			return err
+		}
+
+		a.Conn = conn
+	} else {
+		var syncFileManager *file.Manager
+		var syncSave = false
+		if a.Config.FileStoragePath != "" {
+			if err := a.fm.CreateDir(a.Config.FileStoragePath); err != nil {
+				log.Printf("error create directory: %s\n", err.Error())
+				return err
+			}
+
+			fileManager, err := file.NewManager(a.Config.FileStoragePath)
+			if err != nil {
+				log.Printf("error init file manager")
+				return err
+			}
+			a.fm = fileManager
+
+			if a.Config.StoreInterval == 0 {
+				syncFileManager = fileManager
+				syncSave = true
+			}
+			if a.Config.Restore {
+				syncFileManager = fileManager
+			}
+		}
+		a.Conn = inmemory.NewMemStorage(syncFileManager, syncSave)
+	}
+
+	if a.Config.Restore {
+		if err := a.Conn.System().RunMigrations(ctx); err != nil {
+			log.Printf("error run migrations for storage: %v\n", err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *ServerApp) saveMetricsToDisc(ch chan []common.Metrics) error {
+	metrics := <-ch
+	err := a.fm.Overwrite(metrics)
+	if err != nil {
+		return err
+	}
+	log.Printf("save %v metrics to disc\n", len(metrics))
+	return nil
 }

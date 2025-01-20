@@ -1,8 +1,13 @@
 package metrics
 
 import (
+	"fmt"
+	"log"
 	"math/rand"
 	"runtime"
+
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
@@ -10,6 +15,7 @@ import (
 var memStats runtime.MemStats
 var pollCount int64
 
+// StorageMetric stores metric parameters
 type StorageMetric struct {
 	ID    string
 	MType string
@@ -17,10 +23,12 @@ type StorageMetric struct {
 	Delta *int64
 }
 
+// StorageMetrics stores map of metrics
 type StorageMetrics struct {
 	Metrics map[string]StorageMetric
 }
 
+// NewListMetrics init storage metrics
 func NewListMetrics() *StorageMetrics {
 	return &StorageMetrics{make(map[string]StorageMetric)}
 }
@@ -29,9 +37,28 @@ func getAddress(f float64) *float64 {
 	return &f
 }
 
+// Pull get metrics
 func (listMetrics *StorageMetrics) Pull() {
+	vmStat, err := mem.VirtualMemory()
+	if err != nil {
+		log.Printf("error getting memory stats: %v", err)
+	}
+	totalMemory := float64(vmStat.Total)
+	freeMemory := float64(vmStat.Free)
+
+	cpuUtilization, err := cpu.Percent(0, true)
+	if err != nil {
+		log.Printf("error getting CPU stats: %v", err)
+	}
+
 	pollCount++
 	runtime.ReadMemStats(&memStats)
+	listMetrics.Metrics["TotalMemory"] = StorageMetric{ID: "TotalMemory", MType: common.Gauge, Value: &totalMemory}
+	listMetrics.Metrics["FreeMemory"] = StorageMetric{ID: "FreeMemory", MType: common.Gauge, Value: &freeMemory}
+	for i, utilization := range cpuUtilization {
+		name := fmt.Sprintf("CPUutilization%d", i+1)
+		listMetrics.Metrics[name] = StorageMetric{ID: name, MType: common.Gauge, Value: &utilization}
+	}
 
 	listMetrics.Metrics["Alloc"] = StorageMetric{ID: "Alloc", MType: common.Gauge, Value: getAddress(float64(memStats.Alloc))}
 	listMetrics.Metrics["BuckHashSys"] = StorageMetric{ID: "BuckHashSys", MType: common.Gauge, Value: getAddress(float64(memStats.BuckHashSys))}
@@ -62,8 +89,4 @@ func (listMetrics *StorageMetrics) Pull() {
 	listMetrics.Metrics["MCacheSys"] = StorageMetric{ID: "MCacheSys", MType: common.Gauge, Value: getAddress(float64(memStats.MCacheSys))}
 	listMetrics.Metrics["RandomValue"] = StorageMetric{ID: "RandomValue", MType: common.Gauge, Value: getAddress(float64(rand.Int()))}
 	listMetrics.Metrics["PollCount"] = StorageMetric{ID: "PollCount", MType: common.Counter, Delta: &pollCount}
-}
-
-func (listMetrics *StorageMetrics) AddMetric(metric StorageMetric) {
-	listMetrics.Metrics[metric.ID] = metric
 }
