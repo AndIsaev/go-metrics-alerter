@@ -32,7 +32,7 @@ type ServerApp struct {
 	Config  *Config
 	Server  *http.Server
 	Handler *handler.Handler
-	fm      *file.FileManager
+	fm      *file.Manager
 }
 
 // New - create new app
@@ -224,7 +224,7 @@ func (a *ServerApp) initStorage(ctx context.Context) error {
 
 		a.Conn = conn
 	} else {
-		var syncFileManager *file.FileManager
+		var syncFileManager *file.Manager
 		var syncSave = false
 		if a.Config.FileStoragePath != "" {
 			if err := a.fm.CreateDir(a.Config.FileStoragePath); err != nil {
@@ -232,7 +232,7 @@ func (a *ServerApp) initStorage(ctx context.Context) error {
 				return err
 			}
 
-			fileManager, err := file.NewFileManager(a.Config.FileStoragePath)
+			fileManager, err := file.NewManager(a.Config.FileStoragePath)
 			if err != nil {
 				log.Printf("error init file manager")
 				return err

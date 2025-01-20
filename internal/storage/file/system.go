@@ -10,7 +10,7 @@ import (
 )
 
 // CreateDir create dir
-func (fm *FileManager) CreateDir(fileStoragePath string) error {
+func (fm *Manager) CreateDir(fileStoragePath string) error {
 	if _, err := os.Stat(fileStoragePath); os.IsNotExist(err) {
 		if err = os.Mkdir(fileStoragePath, 0755); err != nil {
 			log.Printf("the directory %s not created\n", fileStoragePath)
@@ -22,7 +22,7 @@ func (fm *FileManager) CreateDir(fileStoragePath string) error {
 }
 
 // Overwrite save metrics in disc
-func (fm *FileManager) Overwrite(newData []common.Metrics) error {
+func (fm *Manager) Overwrite(newData []common.Metrics) error {
 	fullPath := fm.file.Name()
 	file, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
@@ -41,7 +41,7 @@ func (fm *FileManager) Overwrite(newData []common.Metrics) error {
 }
 
 // ReadFile read from file
-func (fm *FileManager) ReadFile() ([]common.Metrics, error) {
+func (fm *Manager) ReadFile() ([]common.Metrics, error) {
 	var result []common.Metrics
 	if err := fm.consumer.Decode(&result); err != nil {
 		log.Println("warning read metrics from file")
@@ -51,7 +51,7 @@ func (fm *FileManager) ReadFile() ([]common.Metrics, error) {
 	return result, nil
 }
 
-func (fm *FileManager) Close() error {
+func (fm *Manager) Close() error {
 	err := fm.file.Close()
 	if err != nil {
 		log.Printf("error close file")

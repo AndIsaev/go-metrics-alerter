@@ -50,7 +50,6 @@ func NewConfig() *Config {
 	}
 
 	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
-		//cfg.Restore = envDBDsn
 		val, err := strconv.ParseBool(envRestore)
 		if err != nil {
 			log.Println("error parse r flag, must be boolean value")

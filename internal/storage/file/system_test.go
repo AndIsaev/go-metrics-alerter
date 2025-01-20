@@ -20,7 +20,7 @@ func TestFileManager_CreateDir(t *testing.T) {
 
 	file, _ := os.CreateTemp(tempDir, "tempfile")
 	defer file.Close()
-	fm := &FileManager{file: file}
+	fm := &Manager{file: file}
 
 	t.Run("succes", func(t *testing.T) {
 		newDirPath := tempDir + "/newdir"
@@ -52,7 +52,7 @@ func TestFileManager_Overwrite(t *testing.T) {
 	}
 	defer os.Remove(file.Name())
 
-	fm := &FileManager{
+	fm := &Manager{
 		file:     file,
 		producer: json.NewEncoder(file),
 		consumer: json.NewDecoder(file),
@@ -97,7 +97,7 @@ func TestFileManager_ReadFile(t *testing.T) {
 		},
 	}
 	t.Run("success read file", func(t *testing.T) {
-		fm := &FileManager{
+		fm := &Manager{
 			file:     file,
 			producer: json.NewEncoder(file),
 			consumer: json.NewDecoder(file),
@@ -116,7 +116,7 @@ func TestFileManager_ReadFile(t *testing.T) {
 	})
 	t.Run("error read file", func(t *testing.T) {
 		var expected []common.Metrics
-		fm := &FileManager{
+		fm := &Manager{
 			file:     file,
 			producer: json.NewEncoder(file),
 			consumer: json.NewDecoder(file),
@@ -138,7 +138,7 @@ func TestFileManager_Close(t *testing.T) {
 	}
 	defer os.Remove(file.Name())
 
-	fm := &FileManager{
+	fm := &Manager{
 		file:     file,
 		producer: json.NewEncoder(file),
 		consumer: json.NewDecoder(file),
@@ -150,7 +150,7 @@ func TestFileManager_Close(t *testing.T) {
 	})
 
 	t.Run("doesn't exists file", func(t *testing.T) {
-		fm := &FileManager{
+		fm := &Manager{
 			file:     file,
 			producer: json.NewEncoder(file),
 			consumer: json.NewDecoder(file),

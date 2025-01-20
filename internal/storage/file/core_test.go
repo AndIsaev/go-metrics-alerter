@@ -18,9 +18,9 @@ func TestNewFileManager(t *testing.T) {
 		}
 		defer os.RemoveAll(dir)
 
-		fm, err := NewFileManager(dir)
+		fm, err := NewManager(dir)
 		if err != nil {
-			t.Fatalf("NewFileManager вернул ошибку: %v", err)
+			t.Fatalf("NewManager вернул ошибку: %v", err)
 		}
 		defer func() {
 			if fm.file != nil {
@@ -40,7 +40,7 @@ func TestNewFileManager(t *testing.T) {
 	})
 	t.Run("error init file-manager", func(t *testing.T) {
 		random := strconv.Itoa(rand.Int())
-		_, err := NewFileManager("fakedir" + random)
+		_, err := NewManager("fakedir" + random)
 		assert.Error(t, err, errors.New("no such file or directory"))
 	})
 }
