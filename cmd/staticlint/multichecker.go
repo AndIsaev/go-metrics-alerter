@@ -24,7 +24,7 @@ func main() {
 	// Запускаем multichecker с набором анализаторов, включая пользовательский ExitCheckAnalyzer
 	multichecker.Main(
 		append(sa,
-			ExitCheckAnalyzer,
+			ExitCheckAnalyzer,  // Запрещающий использовать прямой вызов os.Exit в функции main пакета main
 			printf.Analyzer,    // Печатает предупреждения о неправильных функциях форматирования
 			shadow.Analyzer,    // Ищет элементы переменной, которые скрывают друг друга
 			structtag.Analyzer, // Проверяет наличие ошибок в структурных тегах
