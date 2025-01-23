@@ -88,7 +88,7 @@ func (m *Methods) GetMetricByNameType(ctx context.Context, name, mType string) (
 func (m *Methods) InsertMetric(ctx context.Context, metric common.Metrics) (common.Metrics, error) {
 	result, err := m.Storage.Metric().Insert(ctx, metric)
 	if err != nil {
-		return common.Metrics{}, nil
+		return common.Metrics{}, err
 	}
 	return result, nil
 }
