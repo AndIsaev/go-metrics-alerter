@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/gen"
 	"log"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/gen"
 )
 
 var (
