@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -15,6 +16,7 @@ type compressWriter struct {
 }
 
 func newCompressWriter(w http.ResponseWriter) *compressWriter {
+	fmt.Println("=======")
 	return &compressWriter{
 		w:  w,
 		zw: gzip.NewWriter(w),
@@ -30,6 +32,7 @@ func (c *compressWriter) Write(p []byte) (int, error) {
 }
 
 func (c *compressWriter) WriteHeader(statusCode int) {
+	fmt.Println("000000")
 	c.w.Header().Set("Content-Encoding", "gzip")
 	c.w.WriteHeader(statusCode)
 }
@@ -77,6 +80,10 @@ func GzipMiddleware(h http.Handler) http.Handler {
 
 		// проверяем, что клиент умеет получать от сервера сжатые данные в формате gzip
 		acceptEncoding := r.Header.Get("Accept-Encoding")
+		fmt.Println("++++++++++++")
+		fmt.Println(acceptEncoding)
+		fmt.Println("++++++++++++")
+
 		supportsGzip := strings.Contains(acceptEncoding, "gzip")
 		if supportsGzip {
 			// оборачиваем оригинальный http.ResponseWriter новым с поддержкой сжатия
