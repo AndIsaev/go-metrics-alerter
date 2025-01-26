@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	sa := make([]*analysis.Analyzer, 0, 100)
+	sa := make([]*analysis.Analyzer, 0, len(staticcheck.Analyzers)+5)
 
 	// Добавляем все анализаторы класса SA из пакета staticcheck
 	for _, analyzer := range staticcheck.Analyzers {
