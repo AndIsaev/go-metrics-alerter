@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -134,6 +132,13 @@ func (a *ServerApp) initRouter() {
 	r.Use(logger.RequestLogger, logger.ResponseLogger)
 	r.Use(middleware.Recoverer, middleware.StripSlashes)
 	r.Use(middleware.SetHeader("Content-Type", "application/json"))
+	if a.Config.PrivateKey != "" {
+		privateKey, err := a.Config.GetPrivateKey()
+		if err != nil {
+			log.Printf("Error get private key: %v\n", err)
+		}
+		r.Use(mid.DecryptMiddleware(privateKey))
+	}
 
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
@@ -163,7 +168,7 @@ func (a *ServerApp) initRouter() {
 
 	// Routes
 	r.Group(func(r chi.Router) {
-		r.Use(mid.GzipMiddleware, a.secretMiddleware)
+		r.Use(mid.GzipMiddleware, mid.SecretMiddleware(a.Config.Key))
 		r.Post(`/updates`, a.Handler.UpdateBatchHandler())
 	})
 
@@ -183,35 +188,6 @@ func (a *ServerApp) initRouter() {
 
 		// main page
 		r.Get(`/`, a.Handler.IndexHandler())
-	})
-}
-
-func (a *ServerApp) secretMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		if a.Config.Key != "" {
-			agentSha256sum := r.Header.Get("HashSHA256")
-
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				http.Error(rw, err.Error(), http.StatusBadRequest)
-				return
-			}
-
-			r.Body = io.NopCloser(bytes.NewBuffer(body))
-
-			defer r.Body.Close()
-
-			serverSha256sum := common.Sha256sum(body, a.Config.Key)
-
-			if agentSha256sum != serverSha256sum {
-				log.Println("compare hash is not success")
-				rw.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			rw.Header().Set("HashSHA256", serverSha256sum)
-		}
-
-		next.ServeHTTP(rw, r)
 	})
 }
 

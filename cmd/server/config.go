@@ -1,6 +1,10 @@
 package main
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"flag"
 	"log"
 	"os"
@@ -22,6 +26,8 @@ type Config struct {
 	Dsn string `env:"DATABASE_DSN"`
 	// Key for access to metrics
 	Key string `env:"KEY"`
+	// PrivateKey path of private key of server
+	PrivateKey string `env:"CRYPTO_KEY"`
 }
 
 // NewConfig create new config
@@ -38,8 +44,13 @@ func NewConfig() *Config {
 	flag.Uint64Var(&storeInterval, "i", 300, "interval for save metrics on file")
 	flag.StringVar(&dbDsn, "d", "", "database dsn")
 	flag.StringVar(&cfg.Key, "k", "", "set key")
+	flag.StringVar(&cfg.PrivateKey, "crypto-key", "", "set path of private key")
 
 	flag.Parse()
+
+	if envPrivateKey := os.Getenv("CRYPTO_KEY"); envPrivateKey != "" {
+		cfg.PrivateKey = envPrivateKey
+	}
 
 	if envKey := os.Getenv("KEY"); envKey != "" {
 		cfg.Key = envKey
@@ -80,4 +91,21 @@ func NewConfig() *Config {
 	}
 
 	return cfg
+}
+
+func (c *Config) GetPrivateKey() (*rsa.PrivateKey, error) {
+	privateKey, err := os.ReadFile(c.PrivateKey)
+	if err != nil {
+		log.Println("error read file of private key")
+		return nil, errors.Unwrap(err)
+	}
+
+	privateKeyDecode, _ := pem.Decode(privateKey)
+	parsedPrivateKey, err := x509.ParsePKCS1PrivateKey(privateKeyDecode.Bytes)
+	if err != nil {
+		log.Println("error parse private key")
+		return nil, errors.Unwrap(err)
+	}
+
+	return parsedPrivateKey, nil
 }

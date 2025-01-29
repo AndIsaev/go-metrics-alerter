@@ -135,7 +135,7 @@ func main() {
 		// Разбиваем строку по запятой
 		parts := strings.Split(line, ",")
 		if len(parts) != 3 {
-			fmt.Println("Неправильный формат строки:", line)
+			log.Println("Неправильный формат строки:", line)
 			continue
 		}
 		metricType := parts[0]

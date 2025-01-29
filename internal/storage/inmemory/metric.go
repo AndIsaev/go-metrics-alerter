@@ -9,6 +9,8 @@ import (
 )
 
 func (m *MemStorage) UpsertByValue(ctx context.Context, metric common.Metrics, metricValue any) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	newValue := storage.MetricValue{}
 	if err := newValue.Set(metric.MType, metricValue); err != nil {
 		return err
@@ -53,6 +55,8 @@ func (m *MemStorage) GetByName(_ context.Context, name string) (common.Metrics, 
 }
 
 func (m *MemStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for _, metric := range metrics {
 		switch metric.MType {
 		case common.Gauge:
@@ -87,6 +91,8 @@ func (m *MemStorage) GetByNameType(_ context.Context, name, mType string) (commo
 }
 
 func (m *MemStorage) Insert(ctx context.Context, metric common.Metrics) (common.Metrics, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.Metrics[metric.ID] = metric
 
 	err := m.saveMetricsToDisc(ctx)
