@@ -41,6 +41,7 @@ func TestDecryptMiddleware(t *testing.T) {
 	handlerToTest.ServeHTTP(w, req)
 
 	resp := w.Result()
+	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
 	// Проверяем статус и содержание ответа
@@ -76,6 +77,7 @@ func TestDecryptMiddleware_InvalidData(t *testing.T) {
 	handlerToTest.ServeHTTP(w, req)
 
 	resp := w.Result()
+	defer resp.Body.Close()
 
 	// Проверяем статус код
 	if resp.StatusCode != http.StatusBadRequest {
