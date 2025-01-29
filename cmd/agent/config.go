@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"flag"
@@ -12,37 +13,40 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
 )
 
 // Config use for setting agent application
 type Config struct {
 	// Address is host for application
-	Address string `env:"ADDRESS"`
+	Address string `env:"ADDRESS" json:"address"`
 	// ReportInterval set interval sending metrics to server
-	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
+	ReportInterval time.Duration `env:"REPORT_INTERVAL" json:"report_interval"`
 	// PollInterval how often to update metrics
-	PollInterval time.Duration `env:"POLL_INTERVAL"`
+	PollInterval time.Duration `env:"POLL_INTERVAL" json:"poll_interval"`
 	// Key secret key for connect to server
-	Key string `env:"KEY"`
+	Key string `env:"KEY" json:"key"`
 	// RateLimit limit connections to server
-	RateLimit uint64 `env:"RATE_LIMIT"`
+	RateLimit int `env:"RATE_LIMIT" json:"rate_limit"`
 	// StorageMetrics storage with metrics
 	StorageMetrics *metrics.StorageMetrics
 	// UpdateMetricAddress address for update one metric
 	UpdateMetricAddress string
 	// UpdateMetricsAddress address for update batch with metrics
 	UpdateMetricsAddress string
-	ProtocolHTTP         string
 	// PublicKey public key
 	PublicKey *rsa.PublicKey
 	// PublicKeyPath path of public key
-	PublicKeyPath string `env:"CRYPTO_KEY"`
+	PublicKeyPath string `env:"CRYPTO_KEY" json:"crypto_key"`
+	// ConfigPath path of config file
+	ConfigPath string `env:"CONFIG"`
 }
 
 // NewConfig create new config
 func NewConfig() *Config {
-	cfg := &Config{StorageMetrics: metrics.NewListMetrics(), ProtocolHTTP: "http"}
+	cfg := &Config{StorageMetrics: metrics.NewListMetrics()}
 	var pollIntervalSeconds uint64
 	var reportIntervalSeconds uint64
 	var rateLimit uint64
@@ -53,8 +57,12 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.Key, "k", "", "set key")
 	flag.Uint64Var(&rateLimit, "l", 10, "rate limit")
 	flag.StringVar(&cfg.PublicKeyPath, "crypto-key", "", "set path of public key")
+	// config path
+	configFile := flag.String("c", "", "Path to the configuration file")
+	flag.StringVar(configFile, "config", "", "Path to the configuration file (alias for -c)")
 
 	flag.Parse()
+	cfg.ConfigPath = *configFile
 
 	if envPrivateKeyPath := os.Getenv("CRYPTO_KEY"); envPrivateKeyPath != "" {
 		cfg.PublicKeyPath = envPrivateKeyPath
@@ -62,10 +70,10 @@ func NewConfig() *Config {
 
 	if envRateLimit := os.Getenv("RATE_LIMIT"); envRateLimit != "" {
 		if val, err := strconv.Atoi(envRateLimit); err == nil {
-			cfg.RateLimit = uint64(val)
+			cfg.RateLimit = val
 		}
 	} else {
-		cfg.RateLimit = rateLimit
+		cfg.RateLimit = int(rateLimit)
 	}
 
 	if envKey := os.Getenv("KEY"); envKey != "" {
@@ -92,8 +100,8 @@ func NewConfig() *Config {
 		cfg.PollInterval = time.Duration(pollIntervalSeconds) * time.Second
 	}
 	// set address for update metric
-	cfg.UpdateMetricAddress = fmt.Sprintf("%s://%s/update/", cfg.ProtocolHTTP, cfg.Address)
-	cfg.UpdateMetricsAddress = fmt.Sprintf("%s://%s/updates/", cfg.ProtocolHTTP, cfg.Address)
+	cfg.UpdateMetricAddress = fmt.Sprintf("%s://%s/update/", "http", cfg.Address)
+	cfg.UpdateMetricsAddress = fmt.Sprintf("%s://%s/updates/", "http", cfg.Address)
 
 	if cfg.PublicKeyPath != "" {
 		publicKey, err := cfg.getPublicKey()
@@ -102,6 +110,21 @@ func NewConfig() *Config {
 			log.Printf("error with get public key: %v\n", err)
 		}
 		cfg.PublicKey = publicKey
+	}
+	if envConfig := os.Getenv("CONFIG"); envConfig != "" {
+		cfg.ConfigPath = envConfig
+	}
+	// загружаем конфиг
+	if cfg.ConfigPath != "" {
+		keys := []string{"report_interval", "poll_interval"}
+		body, err := common.LoadConfigFromJSON(cfg.ConfigPath, keys)
+		if err != nil {
+			log.Printf("failed to load configuration from file: %v\n", err)
+		}
+		err = json.Unmarshal(body, cfg)
+		if err != nil {
+			log.Printf("could not unmarshal config file: %s\n", err)
+		}
 	}
 
 	return cfg

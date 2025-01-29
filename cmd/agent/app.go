@@ -113,7 +113,7 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 					}
 
 					interval := a.Config.ReportInterval
-					time.Sleep(interval)
+					time.Sleep(time.Duration(interval))
 				}
 			}
 		}()
@@ -132,7 +132,7 @@ func (a *AgentApp) sendMetrics(metrics []common.Metrics) error {
 		client.SetHeader("HashSHA256", sha256sum)
 	}
 
-	if a.Config.PublicKeyPath != "" {
+	if a.Config.PublicKey != nil {
 		body, err = utils.Encrypt(a.Config.PublicKey, body)
 		if err != nil {
 			return fmt.Errorf("error encrypting metrics: %w", errors.Unwrap(err))

@@ -25,6 +25,7 @@ func TestSecretMiddleware(t *testing.T) {
 		handlerToTest.ServeHTTP(w, req)
 
 		resp := w.Result()
+		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("Expected status 200 OK, got %v", resp.StatusCode)
@@ -48,6 +49,7 @@ func TestSecretMiddleware(t *testing.T) {
 		handlerToTest.ServeHTTP(w, req)
 
 		resp := w.Result()
+		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusBadRequest {
 			t.Errorf("Expected status 400 Bad Request, got %v", resp.StatusCode)
@@ -66,6 +68,7 @@ func TestSecretMiddleware(t *testing.T) {
 		handlerToTest.ServeHTTP(w, req)
 
 		resp := w.Result()
+		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("Expected status 200 OK, got %v", resp.StatusCode)

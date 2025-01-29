@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"flag"
@@ -10,24 +11,27 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 // Config use for setting server application
 type Config struct {
 	// Address is host for application
-	Address string `env:"ADDRESS"`
+	Address string `env:"ADDRESS" json:"address"`
 	// StoreInterval interval for save metrics on file
-	StoreInterval time.Duration `env:"STORE_INTERVAL"`
+	StoreInterval time.Duration `env:"STORE_INTERVAL" json:"store_interval"`
 	// FileStoragePath path of metrics on disk
-	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH" json:"file_store_file"`
 	// Restore load metrics from file when start app
-	Restore bool `env:"RESTORE"`
+	Restore bool `env:"RESTORE" json:"restore"`
 	// Dsn database dsn
-	Dsn string `env:"DATABASE_DSN"`
+	Dsn string `env:"DATABASE_DSN" json:"database_dsn"`
 	// Key for access to metrics
-	Key string `env:"KEY"`
+	Key string `env:"KEY" json:"key"`
 	// PrivateKey path of private key of server
-	PrivateKey string `env:"CRYPTO_KEY"`
+	PrivateKey string `env:"CRYPTO_KEY" json:"crypto_key"`
+	ConfigPath string `env:"CONFIG"`
 }
 
 // NewConfig create new config
@@ -45,8 +49,12 @@ func NewConfig() *Config {
 	flag.StringVar(&dbDsn, "d", "", "database dsn")
 	flag.StringVar(&cfg.Key, "k", "", "set key")
 	flag.StringVar(&cfg.PrivateKey, "crypto-key", "", "set path of private key")
+	// config path
+	configFile := flag.String("c", "", "Path to the configuration file")
+	flag.StringVar(configFile, "config", "", "Path to the configuration file (alias for -c)")
 
 	flag.Parse()
+	cfg.ConfigPath = *configFile
 
 	if envPrivateKey := os.Getenv("CRYPTO_KEY"); envPrivateKey != "" {
 		cfg.PrivateKey = envPrivateKey
@@ -88,6 +96,21 @@ func NewConfig() *Config {
 		}
 	} else {
 		cfg.StoreInterval = time.Duration(storeInterval) * time.Second
+	}
+	if envConfig := os.Getenv("CONFIG"); envConfig != "" {
+		cfg.ConfigPath = envConfig
+	}
+	// загружаем конфиг
+	if cfg.ConfigPath != "" {
+		keys := []string{"store_interval"}
+		body, err := common.LoadConfigFromJSON(cfg.ConfigPath, keys)
+		if err != nil {
+			log.Printf("failed to load configuration from file: %v\n", err)
+		}
+		err = json.Unmarshal(body, cfg)
+		if err != nil {
+			log.Printf("could not unmarshal config file: %s\n", err)
+		}
 	}
 
 	return cfg
