@@ -7,7 +7,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
@@ -43,8 +46,27 @@ func (a *AgentApp) StartApp() {
 	a.jobs = make(chan common.Metrics)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// обработка сигналов завершения
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	// горутина для прослушивания сигналов
+	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+		sig := <-sigs
+		log.Printf("Received signal: %s", sig)
+		cancel() // отменяем контекст
+	}()
+
 	a.runReport(ctx)
-	defer close(a.jobs)
+
+	a.wg.Wait()
+
+	close(a.jobs)
+
+	log.Println("application stopped gracefully")
 }
 
 func (a *AgentApp) initHTTPClient() *resty.Client {
@@ -54,12 +76,10 @@ func (a *AgentApp) initHTTPClient() *resty.Client {
 }
 
 func (a *AgentApp) runReport(ctx context.Context) {
-	a.wg.Add(2 + int(a.Config.RateLimit))
+	a.wg.Add(2)
 	go a.pullMetrics(ctx)
 
 	go a.runWorkers(ctx)
-
-	a.wg.Wait()
 }
 
 // pullMetrics - get metrics from runtime and save to StorageMetrics
@@ -68,6 +88,7 @@ func (a *AgentApp) pullMetrics(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			// Просто возвращайтесь, когда контекст отменяется, не закрывайте канал
 			return
 		default:
 			log.Println("pull metrics")
@@ -75,8 +96,15 @@ func (a *AgentApp) pullMetrics(ctx context.Context) {
 			a.Config.StorageMetrics.Pull()
 
 			a.mu.RLock()
+			// Передача метрик в канал
 			for _, val := range a.Config.StorageMetrics.Metrics {
-				a.jobs <- val
+				select {
+				case a.jobs <- val:
+					// Успешно отправлено в канал
+				case <-ctx.Done():
+					// Завершение по отмене
+					return
+				}
 			}
 			a.mu.RUnlock()
 			log.Println("the metrics have been sent to the channel")
@@ -87,14 +115,17 @@ func (a *AgentApp) pullMetrics(ctx context.Context) {
 }
 
 func (a *AgentApp) runWorkers(ctx context.Context) {
-	a.wg.Add(int(a.Config.RateLimit)) // Увеличивайте на количество горутин
+	defer a.wg.Done()
+	var subWg sync.WaitGroup
+	subWg.Add(a.Config.RateLimit)
 
-	for w := 1; w <= int(a.Config.RateLimit); w++ {
+	for w := 1; w <= a.Config.RateLimit; w++ {
 		go func() {
-			defer a.wg.Done()
+			defer subWg.Done()
 			for {
 				select {
 				case <-ctx.Done(): // Завершение по сигналу отмены
+					log.Println("context done -> exit from runWorkers")
 					return
 				default:
 					tasks := make([]common.Metrics, 0, 3)
@@ -102,7 +133,7 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 						metric, ok := <-a.jobs
 						if !ok {
 							log.Printf("jobs channel closed")
-							return
+							break
 						}
 						tasks = append(tasks, metric)
 					}
@@ -113,11 +144,13 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 					}
 
 					interval := a.Config.ReportInterval
-					time.Sleep(time.Duration(interval))
+					time.Sleep(interval)
 				}
 			}
 		}()
 	}
+	subWg.Wait()
+	log.Println("all workers done")
 }
 
 func (a *AgentApp) sendMetrics(metrics []common.Metrics) error {
