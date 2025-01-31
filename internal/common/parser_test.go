@@ -33,12 +33,12 @@ func TestLoadConfigFromJSON(t *testing.T) {
 	keys := []string{"duration"} // Пример ключа, который обрабатывается в ParseAndSetDuration
 
 	// Вызываем функцию
-	resultJson, err := LoadConfigFromJSON(tempFile.Name(), keys)
+	resultJSON, err := LoadConfigFromJSON(tempFile.Name(), keys)
 	assert.NoError(t, err)
 
 	// Проверяем результаты
 	var resultData map[string]interface{}
-	err = json.Unmarshal(resultJson, &resultData)
+	err = json.Unmarshal(resultJSON, &resultData)
 	assert.NoError(t, err)
 
 	duration, _ := time.ParseDuration("2s")
