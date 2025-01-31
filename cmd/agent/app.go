@@ -88,7 +88,7 @@ func (a *AgentApp) pullMetrics(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			// Просто возвращайтесь, когда контекст отменяется, не закрывайте канал
+			log.Println("context done -> exit from pullMetrics")
 			return
 		default:
 			log.Println("pull metrics")
@@ -100,9 +100,8 @@ func (a *AgentApp) pullMetrics(ctx context.Context) {
 			for _, val := range a.Config.StorageMetrics.Metrics {
 				select {
 				case a.jobs <- val:
-					// Успешно отправлено в канал
 				case <-ctx.Done():
-					// Завершение по отмене
+					log.Println("context done -> exit from pullMetrics")
 					return
 				}
 			}
