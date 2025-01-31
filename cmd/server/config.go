@@ -45,7 +45,7 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.Address, "a", ":8080", "server address")
 	flag.BoolVar(&restore, "r", true, "load metrics from file")
 	flag.StringVar(&fileStoragePath, "f", "./metrics", "path of metrics on disk")
-	flag.Uint64Var(&storeInterval, "i", 300, "interval for save metrics on file")
+	flag.Uint64Var(&storeInterval, "i", 5, "interval for save metrics on file")
 	flag.StringVar(&dbDsn, "d", "", "database dsn")
 	flag.StringVar(&cfg.Key, "k", "", "set key")
 	flag.StringVar(&cfg.PrivateKey, "crypto-key", "", "set path of private key")

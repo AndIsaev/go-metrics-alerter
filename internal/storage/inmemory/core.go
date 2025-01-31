@@ -14,7 +14,7 @@ type MemStorage struct {
 	Metrics  map[string]common.Metrics
 	fm       *file.Manager
 	syncSave bool
-	mu       sync.Mutex
+	mu       sync.RWMutex
 }
 
 // NewMemStorage init storage in memory

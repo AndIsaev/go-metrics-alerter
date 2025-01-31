@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/pprof"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -25,20 +30,24 @@ import (
 
 // ServerApp - structure of application
 type ServerApp struct {
-	Router  chi.Router
-	Conn    storage.Storage
-	Config  *Config
-	Server  *http.Server
-	Handler *handler.Handler
-	fm      *file.Manager
+	Router    chi.Router
+	Conn      storage.Storage
+	Config    *Config
+	Server    *http.Server
+	Handler   *handler.Handler
+	fm        *file.Manager
+	wg        sync.WaitGroup
+	chMetrics chan []common.Metrics
 }
 
 // New - create new app
 func New() *ServerApp {
 	app := &ServerApp{}
 	app.Config = NewConfig()
-	ctx := context.Background()
+	app.chMetrics = make(chan []common.Metrics)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	// init file storage
 	err := app.initStorage(ctx)
 	if err != nil {
@@ -54,51 +63,46 @@ func New() *ServerApp {
 }
 
 // StartApp start application
-func (a *ServerApp) StartApp(ctx context.Context) error {
+func (a *ServerApp) StartApp() error {
 	if err := logger.Initialize(); err != nil {
 		return err
 	}
-	var wg sync.WaitGroup
-	var mu sync.RWMutex
-	chMetrics := make(chan []common.Metrics)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	defer a.shutdown(ctx) // закрываем соединения
 
 	// init router
 	a.initRouter()
 
-	// init http server
+	// init HTTP server
 	a.initHTTPServer()
 
 	if a.fm != nil && a.Config.StoreInterval != 0 {
-		wg.Add(2)
-
-		go func(ctx context.Context, ch chan []common.Metrics) {
-			defer wg.Done()
-			for {
-				time.Sleep(a.Config.StoreInterval)
-				mu.RLock()
-				metrics, _ := a.Conn.Metric().List(ctx)
-				mu.RUnlock()
-				ch <- metrics
-			}
-		}(ctx, chMetrics)
-
-		go func() {
-			defer wg.Done()
-			for {
-				time.Sleep(a.Config.StoreInterval)
-				err := a.saveMetricsToDisc(chMetrics)
-				if err != nil {
-					log.Printf("error save metrics to disc")
-				}
-			}
-		}()
+		a.wg.Add(2)
+		go a.pullMetrics(ctx)
+		go a.runFileWorker(ctx)
 	}
-	wg.Add(1)
 
+	a.wg.Add(1)
+	go a.runServer(ctx)
+
+	// обработка сигналов завершения
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	// горутина для прослушивания сигналов
+	a.wg.Add(1)
 	go func() {
-		_ = a.startHTTPServer()
+		defer a.wg.Done()
+		sig := <-sigs
+		log.Printf("Received signal: %s", sig)
+		cancel() // отменяем контекст
 	}()
-	wg.Wait()
+
+	a.wg.Wait()
+	close(a.chMetrics)
+
 	return nil
 }
 
@@ -114,8 +118,7 @@ func (a *ServerApp) initHTTPServer() {
 }
 
 // Shutdown close connections
-func (a *ServerApp) Shutdown() {
-	ctx := context.Background()
+func (a *ServerApp) shutdown(ctx context.Context) {
 	if a.fm != nil {
 		a.fm.Close()
 	}
@@ -130,7 +133,7 @@ func (a *ServerApp) Shutdown() {
 func (a *ServerApp) initRouter() {
 	r := a.Router
 	r.Use(logger.RequestLogger, logger.ResponseLogger)
-	r.Use(middleware.Recoverer, middleware.StripSlashes)
+	r.Use(middleware.StripSlashes)
 	r.Use(middleware.SetHeader("Content-Type", "application/json"))
 	if a.Config.PrivateKey != "" {
 		privateKey, err := a.Config.GetPrivateKey()
@@ -192,56 +195,141 @@ func (a *ServerApp) initRouter() {
 }
 
 func (a *ServerApp) initStorage(ctx context.Context) error {
-	if a.Config.Dsn != "" {
-		conn, err := postgres.NewPgStorage(a.Config.Dsn)
-		if err != nil {
-			return err
-		}
-
-		a.Conn = conn
-	} else {
-		var syncFileManager *file.Manager
-		var syncSave = false
-		if a.Config.FileStoragePath != "" {
-			if err := a.fm.CreateDir(a.Config.FileStoragePath); err != nil {
-				log.Printf("error create directory: %s\n", err.Error())
-				return err
-			}
-
-			fileManager, err := file.NewManager(a.Config.FileStoragePath)
+	select {
+	case <-ctx.Done():
+		log.Println("context done -> exit from initStorage")
+		return nil
+	default:
+		if a.Config.Dsn != "" {
+			conn, err := postgres.NewPgStorage(a.Config.Dsn)
 			if err != nil {
-				log.Printf("error init file manager")
 				return err
 			}
-			a.fm = fileManager
 
-			if a.Config.StoreInterval == 0 {
-				syncFileManager = fileManager
-				syncSave = true
+			a.Conn = conn
+		} else {
+			var syncFileManager *file.Manager
+			var syncSave = false
+			if a.Config.FileStoragePath != "" {
+				if err := a.fm.CreateDir(a.Config.FileStoragePath); err != nil {
+					log.Printf("error create directory: %s\n", err.Error())
+					return err
+				}
+
+				fileManager, err := file.NewManager(a.Config.FileStoragePath)
+				if err != nil {
+					log.Printf("error init file manager")
+					return err
+				}
+				a.fm = fileManager
+
+				if a.Config.StoreInterval == 0 {
+					syncFileManager = fileManager
+					syncSave = true
+				}
+				if a.Config.Restore {
+					syncFileManager = fileManager
+				}
 			}
-			if a.Config.Restore {
-				syncFileManager = fileManager
-			}
+			a.Conn = inmemory.NewMemStorage(syncFileManager, syncSave)
 		}
-		a.Conn = inmemory.NewMemStorage(syncFileManager, syncSave)
-	}
 
-	if a.Config.Restore {
-		if err := a.Conn.System().RunMigrations(ctx); err != nil {
-			log.Printf("error run migrations for storage: %v\n", err.Error())
-			return err
+		if a.Config.Restore {
+			if err := a.Conn.System().RunMigrations(ctx); err != nil {
+				log.Printf("error run migrations for storage: %v\n", err.Error())
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func (a *ServerApp) saveMetricsToDisc(ch chan []common.Metrics) error {
-	metrics := <-ch
-	err := a.fm.Overwrite(metrics)
-	if err != nil {
-		return err
+func (a *ServerApp) saveMetricsToDisc(ctx context.Context, metrics []common.Metrics) error {
+	select {
+	case <-ctx.Done():
+		log.Println("context done -> exit from saveMetricsToDisc")
+		return nil
+	default:
+		err := a.fm.Overwrite(ctx, metrics)
+		if err != nil {
+			return err
+		}
+		log.Printf("save %v metrics to disc\n", len(metrics))
+		return nil
 	}
-	log.Printf("save %v metrics to disc\n", len(metrics))
-	return nil
+}
+
+func (a *ServerApp) runServer(ctx context.Context) {
+	defer a.wg.Done()
+
+	// Создаем канал для ошибок сервера
+	serverErrChan := make(chan error, 1)
+
+	// Запускаем сервер в отдельной горутине
+	go func() {
+		if err := a.startHTTPServer(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErrChan <- fmt.Errorf("HTTP server error: %w", err)
+		}
+		close(serverErrChan) // Закрываем канал после завершения работы сервера
+	}()
+
+	select {
+	case err := <-serverErrChan:
+		if err != nil {
+			log.Println(err)
+		}
+	case <-ctx.Done():
+		// Если контекст отменен, корректно завершаем HTTP-сервер
+		shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelShutdown()
+
+		if err := a.Server.Shutdown(shutdownCtx); err != nil {
+			log.Printf("HTTP server shutdown error: %v", err)
+		} else {
+			log.Println("HTTP server shutdown gracefully")
+		}
+	}
+}
+
+func (a *ServerApp) pullMetrics(ctx context.Context) {
+	defer a.wg.Done()
+
+	ticker := time.NewTicker(a.Config.StoreInterval) // Используем ticker для интервальных операций
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Shutting down metrics collection goroutine")
+			return
+		case <-ticker.C:
+			metrics, err := a.Conn.Metric().List(ctx)
+			if err != nil {
+				log.Printf("failed пуе list metrics: %v", err)
+				continue
+			}
+
+			select {
+			case a.chMetrics <- metrics:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+func (a *ServerApp) runFileWorker(ctx context.Context) {
+	defer a.wg.Done()
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Shutting down metrics saving goroutine")
+			return
+		case metrics := <-a.chMetrics:
+			if err := a.saveMetricsToDisc(ctx, metrics); err != nil {
+				log.Printf("error saving metrics to disk: %v", err)
+			}
+		}
+	}
 }

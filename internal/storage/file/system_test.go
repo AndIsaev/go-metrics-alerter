@@ -1,6 +1,7 @@
 package file
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -51,6 +52,7 @@ func TestFileManager_Overwrite(t *testing.T) {
 		t.Fatalf("Не удалось создать временный файл: %v", err)
 	}
 	defer os.Remove(file.Name())
+	ctx := context.Background()
 
 	fm := &Manager{
 		file:     file,
@@ -66,7 +68,7 @@ func TestFileManager_Overwrite(t *testing.T) {
 		},
 	}
 	t.Run("success overwrite", func(t *testing.T) {
-		if err := fm.Overwrite(metrics); err != nil {
+		if err := fm.Overwrite(ctx, metrics); err != nil {
 			t.Fatalf("Не удалось записать начальные данные в файл: %v", err)
 		}
 
@@ -77,13 +79,14 @@ func TestFileManager_Overwrite(t *testing.T) {
 
 	t.Run("error open file", func(t *testing.T) {
 		os.Remove(fm.file.Name())
-		err := fm.Overwrite(metrics)
+		err := fm.Overwrite(ctx, metrics)
 		assert.Error(t, err, fmt.Errorf("no such file or directory"))
 	})
 }
 
 func TestFileManager_ReadFile(t *testing.T) {
 	file, err := os.CreateTemp("", "testfile")
+	ctx := context.Background()
 	if err != nil {
 		t.Fatalf("Не удалось создать временный файл: %v", err)
 	}
@@ -106,7 +109,7 @@ func TestFileManager_ReadFile(t *testing.T) {
 		if _, err := os.OpenFile(fm.file.Name(), os.O_WRONLY, 0666); err != nil {
 			t.Fatalf("Не удалось открыть файл: %v", err)
 		}
-		if err := fm.Overwrite(metrics); err != nil {
+		if err := fm.Overwrite(ctx, metrics); err != nil {
 			t.Fatalf("Не удалось записать начальные данные в файл: %v", err)
 		}
 
