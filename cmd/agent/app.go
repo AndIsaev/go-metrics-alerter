@@ -153,6 +153,12 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 }
 
 func (a *AgentApp) sendMetrics(metrics []common.Metrics) error {
+	ip, err := utils.GetLocalIP(a.Config.Address)
+	if err != nil {
+		fmt.Printf("Error getting local IP: %v\n", err)
+		return err
+	}
+
 	body, err := json.Marshal(metrics)
 	if err != nil {
 		return errors.Unwrap(fmt.Errorf("error encoding metric: %w", err))
@@ -177,6 +183,7 @@ func (a *AgentApp) sendMetrics(metrics []common.Metrics) error {
 	res, err := client.
 		SetHeader("Accept-Encoding", "gzip").
 		SetHeader("Content-Type", "application/octet-stream").
+		SetHeader("X-Real-IP", ip).
 		SetBody(body).
 		Post(a.Config.UpdateMetricsAddress)
 

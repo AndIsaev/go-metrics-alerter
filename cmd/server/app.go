@@ -142,6 +142,9 @@ func (a *ServerApp) initRouter() {
 		}
 		r.Use(mid.DecryptMiddleware(privateKey))
 	}
+	if a.Config.TrustedSubnet != "" {
+		r.Use(mid.TrustedSubnetMiddleware(a.Config.TrustedSubnet))
+	}
 
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)

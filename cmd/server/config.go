@@ -30,8 +30,9 @@ type Config struct {
 	// Key for access to metrics
 	Key string `env:"KEY" json:"key"`
 	// PrivateKey path of private key of server
-	PrivateKey string `env:"CRYPTO_KEY" json:"crypto_key"`
-	ConfigPath string `env:"CONFIG"`
+	PrivateKey    string `env:"CRYPTO_KEY" json:"crypto_key"`
+	ConfigPath    string `env:"CONFIG"`
+	TrustedSubnet string `env:"TRUSTED_SUBNET"`
 }
 
 // NewConfig create new config
@@ -45,16 +46,21 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.Address, "a", ":8080", "server address")
 	flag.BoolVar(&restore, "r", true, "load metrics from file")
 	flag.StringVar(&fileStoragePath, "f", "./metrics", "path of metrics on disk")
-	flag.Uint64Var(&storeInterval, "i", 5, "interval for save metrics on file")
+	flag.Uint64Var(&storeInterval, "i", 300, "interval for save metrics on file")
 	flag.StringVar(&dbDsn, "d", "", "database dsn")
 	flag.StringVar(&cfg.Key, "k", "", "set key")
 	flag.StringVar(&cfg.PrivateKey, "crypto-key", "", "set path of private key")
+	flag.StringVar(&cfg.TrustedSubnet, "t", "", "set trusted subnet")
 	// config path
 	configFile := flag.String("c", "", "Path to the configuration file")
 	flag.StringVar(configFile, "config", "", "Path to the configuration file (alias for -c)")
 
 	flag.Parse()
 	cfg.ConfigPath = *configFile
+
+	if envTrustedSubnet := os.Getenv("TRUSTED_SUBNET"); envTrustedSubnet != "" {
+		cfg.TrustedSubnet = envTrustedSubnet
+	}
 
 	if envPrivateKey := os.Getenv("CRYPTO_KEY"); envPrivateKey != "" {
 		cfg.PrivateKey = envPrivateKey
