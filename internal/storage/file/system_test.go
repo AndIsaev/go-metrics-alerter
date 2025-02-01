@@ -23,7 +23,7 @@ func TestFileManager_CreateDir(t *testing.T) {
 	defer file.Close()
 	fm := &Manager{file: file}
 
-	t.Run("succes", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		newDirPath := tempDir + "/newdir"
 		if err := fm.CreateDir(newDirPath); err != nil {
 			t.Errorf("Ожидалось, что директория создана успешно, но возникла ошибка: %v", err)
