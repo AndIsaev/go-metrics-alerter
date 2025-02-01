@@ -3,8 +3,8 @@ package utils
 import "net"
 
 // GetLocalIP get your ip address
-func GetLocalIP(post string) (string, error) {
-	addr, err := net.ResolveTCPAddr("tcp", post)
+func GetLocalIP(address string) (string, error) {
+	addr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return "", err
 	}
