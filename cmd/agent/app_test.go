@@ -49,7 +49,7 @@ func TestSendMetrics(t *testing.T) {
 	}
 	httpmock.ActivateNonDefault(app.Client.GetClient())
 
-	metrics := []common.Metrics{{ID: "metric1", MType: common.Gauge, Delta: linkInt64(1)}}
+	metrics := []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: linkInt64(1)}}
 
 	t.Run("success", func(t *testing.T) {
 		httpmock.RegisterResponder("POST", app.Config.UpdateMetricsAddress,
