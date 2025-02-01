@@ -25,10 +25,11 @@ type AgentApp struct {
 	// Config use for settings of app
 	Config *Config
 	// Client use for requests to server
-	Client *resty.Client
-	mu     sync.RWMutex
-	wg     sync.WaitGroup
-	jobs   chan common.Metrics
+	Client     *resty.Client
+	IPResolver utils.IPResolver
+	mu         sync.RWMutex
+	wg         sync.WaitGroup
+	jobs       chan common.Metrics
 }
 
 // New create and return new AgentApp
@@ -36,6 +37,7 @@ func New() *AgentApp {
 	app := &AgentApp{}
 	config := NewConfig()
 	app.Config = config
+	app.IPResolver = utils.NewDefaultIPResolver()
 
 	return app
 }
@@ -153,9 +155,9 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 }
 
 func (a *AgentApp) sendMetrics(metrics []common.Metrics) error {
-	ip, err := utils.GetLocalIP(a.Config.Address)
+	ip, err := a.IPResolver.GetLocalIP(a.Config.Address)
 	if err != nil {
-		fmt.Printf("Error getting local IP: %v\n", err)
+		log.Printf("Error getting local IP: %v\n", err)
 		return err
 	}
 

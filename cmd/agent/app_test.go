@@ -19,6 +19,17 @@ func linkInt64(num int64) *int64 {
 	return &num
 }
 
+// MockIPResolver — мок-реализация интерфейса IPResolver для тестов
+type MockIPResolver struct {
+	IP  string
+	Err error
+}
+
+// GetLocalIP возвращает заранее определенные значения
+func (mock *MockIPResolver) GetLocalIP(address string) (string, error) {
+	return mock.IP, mock.Err
+}
+
 func TestInitHTTPClient(t *testing.T) {
 	app := New()
 	client := app.initHTTPClient()
@@ -29,18 +40,16 @@ func TestInitHTTPClient(t *testing.T) {
 
 func TestSendMetrics(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
+	mockResolver := &MockIPResolver{IP: "192.168.0.1", Err: nil}
 
 	app := &AgentApp{
-		Config: &Config{},
-		Client: resty.New(),
+		Config:     &Config{},
+		Client:     resty.New(),
+		IPResolver: mockResolver,
 	}
 	httpmock.ActivateNonDefault(app.Client.GetClient())
 
 	metrics := []common.Metrics{{ID: "metric1", MType: common.Gauge, Delta: linkInt64(1)}}
-	//storageMetrics := metrics.StorageMetrics{
-	//	Metrics: make(map[string]common.Metrics),
-	//}
-	//storageMetrics.Metrics[metric.ID] = metric
 
 	t.Run("success", func(t *testing.T) {
 		httpmock.RegisterResponder("POST", app.Config.UpdateMetricsAddress,
