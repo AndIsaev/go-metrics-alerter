@@ -26,7 +26,7 @@ type MockIPResolver struct {
 }
 
 // GetLocalIP возвращает заранее определенные значения
-func (mock *MockIPResolver) GetLocalIP(address string) (string, error) {
+func (mock *MockIPResolver) GetLocalIP(_ string) (string, error) {
 	return mock.IP, mock.Err
 }
 
