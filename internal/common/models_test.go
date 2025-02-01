@@ -8,7 +8,7 @@ import (
 
 func TestIsValidValue(t *testing.T) {
 	var delta int64 = 100
-	var value float64 = 10.5
+	var value = 10.5
 
 	tests := []struct {
 		name     string
