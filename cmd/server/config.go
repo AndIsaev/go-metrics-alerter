@@ -32,7 +32,7 @@ type Config struct {
 	// PrivateKey path of private key of server
 	PrivateKey    string `env:"CRYPTO_KEY" json:"crypto_key"`
 	ConfigPath    string `env:"CONFIG"`
-	TrustedSubnet string `env:"TRUSTED_SUBNET"`
+	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 // NewConfig create new config
