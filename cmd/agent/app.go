@@ -181,7 +181,6 @@ func (a *AgentApp) sendMetrics(metrics []common.Metrics) error {
 
 	log.Println("send metrics")
 
-	// Используйте правильный Content-Type
 	res, err := client.
 		SetHeader("Accept-Encoding", "gzip").
 		SetHeader("Content-Type", "application/octet-stream").
