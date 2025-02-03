@@ -6,9 +6,10 @@ import (
 	"os"
 )
 
+const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 // randomString генерирует случайную строку заданной длины
 func randomString(n int) string {
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = letters[rand.Int63()%int64(len(letters))]
