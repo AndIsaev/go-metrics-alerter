@@ -5,9 +5,12 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
+	"log"
 	"os"
 )
+
+const privatePath = "../server/private.pem"
+const publicPath = "../agent/public.pem"
 
 // GenerateRSAKeys генерирует пару RSA ключей
 func GenerateRSAKeys(bits int) (*rsa.PrivateKey, *rsa.PublicKey, error) {
@@ -44,27 +47,31 @@ func WriteToFile(filename string, data []byte) error {
 	return os.WriteFile(filename, data, 0644)
 }
 
-func main() {
+func RunGenerate(privatePath, publicPath string) error {
 	privateKey, publicKey, err := GenerateRSAKeys(2048)
 	if err != nil {
-		fmt.Println("Error generating RSA keys:", err)
-		return
+		return err
 	}
 
 	privateKeyPEM := EncodePrivateKeyToPEM(privateKey)
 	publicKeyPEM, err := EncodePublicKeyToPEM(publicKey)
 	if err != nil {
-		fmt.Println("Error encoding public key:", err)
-		return
+		return err
 	}
 
-	if err = WriteToFile("../server/private.pem", privateKeyPEM); err != nil {
-		fmt.Println("Error writing private key to file:", err)
-		return
+	if err = WriteToFile(privatePath, privateKeyPEM); err != nil {
+		return err
 	}
 
-	if err = WriteToFile("../agent/public.pem", publicKeyPEM); err != nil {
-		fmt.Println("Error writing public key to file:", err)
-		return
+	if err = WriteToFile(publicPath, publicKeyPEM); err != nil {
+		return err
+	}
+	return nil
+}
+
+func main() {
+	err := RunGenerate(privatePath, publicPath)
+	if err != nil {
+		log.Fatalf("error generate keys: %v", err)
 	}
 }

@@ -44,3 +44,25 @@ func TestWriteToFile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, data, readData)
 }
+
+func TestRunGenerate(t *testing.T) {
+	// Создаем временную директорию для тестов
+	tempDir := t.TempDir()
+
+	// Определяем пути для временных файлов
+	privateKeyPath := filepath.Join(tempDir, "private.pem")
+	publicKeyPath := filepath.Join(tempDir, "public.pem")
+
+	// Запускаем функцию с временными файлами
+	err := RunGenerate(privateKeyPath, publicKeyPath)
+	assert.NoError(t, err, "Функция RunGenerate должна завершиться без ошибок")
+
+	// Проверяем, что оба файла были созданы и содержат данные
+	privateFileInfo, err := os.Stat(privateKeyPath)
+	assert.NoError(t, err, "Файл приватного ключа должен существовать")
+	assert.NotZero(t, privateFileInfo.Size(), "Файл приватного ключа не должен быть пустым")
+
+	publicFileInfo, err := os.Stat(publicKeyPath)
+	assert.NoError(t, err, "Файл публичного ключа должен существовать")
+	assert.NotZero(t, publicFileInfo.Size(), "Файл публичного ключа не должен быть пустым")
+}
