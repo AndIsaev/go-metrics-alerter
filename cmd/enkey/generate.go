@@ -9,8 +9,10 @@ import (
 	"os"
 )
 
-const privatePath = "../server/private.pem"
-const publicPath = "../agent/public.pem"
+const (
+	privatePath = "../server/private.pem"
+	publicPath  = "../agent/public.pem"
+)
 
 // GenerateRSAKeys генерирует пару RSA ключей
 func GenerateRSAKeys(bits int) (*rsa.PrivateKey, *rsa.PublicKey, error) {
