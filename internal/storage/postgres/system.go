@@ -15,7 +15,11 @@ func (p *PgStorage) Close(_ context.Context) error {
 	return err
 }
 
-func (p *PgStorage) Ping(_ context.Context) error {
+func (p *PgStorage) Ping(ctx context.Context) error {
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from Ping")
+		return ctx.Err()
+	}
 	err := p.db.Ping()
 	if err != nil {
 		log.Println(errors.Unwrap(err))
@@ -24,6 +28,10 @@ func (p *PgStorage) Ping(_ context.Context) error {
 }
 
 func (p *PgStorage) RunMigrations(ctx context.Context) error {
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from RunMigrations")
+		return ctx.Err()
+	}
 	log.Println("run migrations")
 
 	query := `create table if not exists metric(

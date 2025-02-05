@@ -1,6 +1,7 @@
 package file
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -22,7 +23,11 @@ func (fm *Manager) CreateDir(fileStoragePath string) error {
 }
 
 // Overwrite save metrics in disc
-func (fm *Manager) Overwrite(newData []common.Metrics) error {
+func (fm *Manager) Overwrite(ctx context.Context, newData []common.Metrics) error {
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from Overwrite")
+		return ctx.Err()
+	}
 	fullPath := fm.file.Name()
 	file, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
@@ -37,6 +42,7 @@ func (fm *Manager) Overwrite(newData []common.Metrics) error {
 		log.Printf("error save row to disc")
 		return errors.Unwrap(err)
 	}
+
 	return nil
 }
 

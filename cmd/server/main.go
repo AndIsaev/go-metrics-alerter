@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/gen"
@@ -18,13 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 	app := New()
-	ctx := context.Background()
-	err := app.StartApp(ctx)
-
-	defer func() {
-		app.Shutdown()
-		if err != nil {
-			log.Fatalf("close process with error: %s\n", err.Error())
-		}
-	}()
+	if err := app.StartApp(); err != nil {
+		log.Fatal(err)
+	}
 }

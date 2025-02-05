@@ -13,6 +13,11 @@ import (
 
 func (p *PgStorage) List(ctx context.Context) ([]common.Metrics, error) {
 	var metrics []common.Metrics
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from List")
+		return metrics, ctx.Err()
+	}
+
 	query := "SELECT * FROM metric"
 
 	err := p.db.SelectContext(ctx, &metrics, query)
@@ -23,6 +28,11 @@ func (p *PgStorage) List(ctx context.Context) ([]common.Metrics, error) {
 }
 
 func (p *PgStorage) UpsertByValue(ctx context.Context, metric common.Metrics, metricValue any) error {
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from UpsertByValue")
+		return ctx.Err()
+	}
+
 	newValue := storage.MetricValue{}
 
 	if err := newValue.Set(metric.MType, metricValue); err != nil {
@@ -52,6 +62,10 @@ func (p *PgStorage) UpsertByValue(ctx context.Context, metric common.Metrics, me
 
 func (p *PgStorage) GetByName(ctx context.Context, name string) (common.Metrics, error) {
 	result := common.Metrics{}
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from GetByName")
+		return result, ctx.Err()
+	}
 
 	query := `select * from metric where id = $1;`
 
@@ -63,6 +77,11 @@ func (p *PgStorage) GetByName(ctx context.Context, name string) (common.Metrics,
 }
 
 func (p *PgStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) error {
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from InsertBatch")
+		return ctx.Err()
+	}
+
 	tx, err := p.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -96,6 +115,10 @@ func (p *PgStorage) InsertBatch(ctx context.Context, metrics []common.Metrics) e
 
 func (p *PgStorage) GetByNameType(ctx context.Context, name, mType string) (common.Metrics, error) {
 	result := common.Metrics{}
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from GetByNameType")
+		return result, ctx.Err()
+	}
 
 	query := `select * from metric where id = $1 and "type" = $2;`
 
@@ -107,6 +130,10 @@ func (p *PgStorage) GetByNameType(ctx context.Context, name, mType string) (comm
 }
 
 func (p *PgStorage) Insert(ctx context.Context, metric common.Metrics) (common.Metrics, error) {
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from Insert")
+		return common.Metrics{}, ctx.Err()
+	}
 	tx, err := p.db.Begin()
 	if err != nil {
 		return metric, err
@@ -146,6 +173,11 @@ func (p *PgStorage) Insert(ctx context.Context, metric common.Metrics) (common.M
 }
 
 func (p *PgStorage) create(ctx context.Context, metric common.Metrics) error {
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from create")
+		return ctx.Err()
+	}
+
 	query := `insert into metric (id, type, delta, value)
 					values ($1, $2, $3, $4) on conflict (id)
 					do update set delta = metric.delta + $3, value = $4;`

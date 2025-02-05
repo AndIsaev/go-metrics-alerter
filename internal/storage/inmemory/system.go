@@ -13,7 +13,11 @@ func (m *MemStorage) Close(_ context.Context) error {
 	return nil
 }
 
-func (m *MemStorage) Ping(_ context.Context) error {
+func (m *MemStorage) Ping(ctx context.Context) error {
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from Ping")
+		return ctx.Err()
+	}
 	if m.Metrics == nil {
 		log.Println(storage.ErrMapNotAvailable)
 		return storage.ErrMapNotAvailable
@@ -22,6 +26,10 @@ func (m *MemStorage) Ping(_ context.Context) error {
 }
 
 func (m *MemStorage) RunMigrations(ctx context.Context) error {
+	if ctx.Err() != nil {
+		log.Println("context is done -> exit from RunMigrations")
+		return ctx.Err()
+	}
 	log.Println("run migrations")
 	metrics, err := m.fm.ReadFile()
 	if err != nil && !errors.Is(err, io.EOF) {

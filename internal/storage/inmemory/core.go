@@ -2,6 +2,7 @@ package inmemory
 
 import (
 	"log"
+	"sync"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
@@ -13,6 +14,7 @@ type MemStorage struct {
 	Metrics  map[string]common.Metrics
 	fm       *file.Manager
 	syncSave bool
+	mu       sync.RWMutex
 }
 
 // NewMemStorage init storage in memory

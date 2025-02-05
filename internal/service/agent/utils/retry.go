@@ -5,14 +5,14 @@ import (
 	"log"
 	"time"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
-type Object func(metrics metrics.StorageMetrics) error
+type Object func(metrics []common.Metrics) error
 
 // Retry - декоратор, реализующий повторный вызов функции
 func Retry(fn Object) Object {
-	return func(metrics metrics.StorageMetrics) error {
+	return func(metrics []common.Metrics) error {
 		sleep := time.Second * 1
 		var err error
 

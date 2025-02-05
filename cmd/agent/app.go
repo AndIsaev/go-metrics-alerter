@@ -7,15 +7,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 
 	"github.com/go-resty/resty/v2"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/metrics"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/middleware"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 )
 
 // AgentApp structure of application
@@ -26,7 +28,7 @@ type AgentApp struct {
 	Client *resty.Client
 	mu     sync.RWMutex
 	wg     sync.WaitGroup
-	jobs   chan metrics.StorageMetrics
+	jobs   chan common.Metrics
 }
 
 // New create and return new AgentApp
@@ -41,28 +43,43 @@ func New() *AgentApp {
 // StartApp user for start application
 func (a *AgentApp) StartApp() {
 	a.Client = a.initHTTPClient()
-	a.jobs = make(chan metrics.StorageMetrics)
+	a.jobs = make(chan common.Metrics)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// обработка сигналов завершения
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	// горутина для прослушивания сигналов
+	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+		sig := <-sigs
+		log.Printf("Received signal: %s", sig)
+		cancel() // отменяем контекст
+	}()
+
 	a.runReport(ctx)
-	defer close(a.jobs)
+
+	a.wg.Wait()
+
+	close(a.jobs)
+
+	log.Println("application stopped gracefully")
 }
 
 func (a *AgentApp) initHTTPClient() *resty.Client {
 	cli := resty.New()
 	cli.SetTimeout(time.Second * 5)
-	cli.OnBeforeRequest(middleware.GzipRequestMiddleware)
-	cli.OnBeforeRequest(a.hashMiddleware)
 	return cli
 }
 
 func (a *AgentApp) runReport(ctx context.Context) {
-	a.wg.Add(2 + int(a.Config.RateLimit))
+	a.wg.Add(2)
 	go a.pullMetrics(ctx)
 
 	go a.runWorkers(ctx)
-
-	a.wg.Wait()
 }
 
 // pullMetrics - get metrics from runtime and save to StorageMetrics
@@ -70,14 +87,25 @@ func (a *AgentApp) pullMetrics(ctx context.Context) {
 	defer a.wg.Done()
 	for {
 		select {
-		case <-ctx.Done(): // Завершение по сигналу отмены
+		case <-ctx.Done():
+			log.Println("context done -> exit from pullMetrics")
 			return
 		default:
 			log.Println("pull metrics")
-			a.mu.Lock()
+
 			a.Config.StorageMetrics.Pull()
-			a.mu.Unlock()
-			a.jobs <- *a.Config.StorageMetrics
+
+			a.mu.RLock()
+			// Передача метрик в канал
+			for _, val := range a.Config.StorageMetrics.Metrics {
+				select {
+				case a.jobs <- val:
+				case <-ctx.Done():
+					log.Println("context done -> exit from pullMetrics")
+					return
+				}
+			}
+			a.mu.RUnlock()
 			log.Println("the metrics have been sent to the channel")
 
 			time.Sleep(a.Config.PollInterval)
@@ -86,76 +114,81 @@ func (a *AgentApp) pullMetrics(ctx context.Context) {
 }
 
 func (a *AgentApp) runWorkers(ctx context.Context) {
-	for w := 1; w <= int(a.Config.RateLimit); w++ {
+	defer a.wg.Done()
+	var subWg sync.WaitGroup
+	subWg.Add(a.Config.RateLimit)
+
+	for w := 1; w <= a.Config.RateLimit; w++ {
 		go func() {
-			defer a.wg.Done()
+			defer subWg.Done()
 			for {
 				select {
 				case <-ctx.Done(): // Завершение по сигналу отмены
+					log.Println("context done -> exit from runWorkers")
 					return
-				case m, ok := <-a.jobs:
-					if !ok {
-						log.Printf("jobs channel closed")
-						return
+				default:
+					tasks := make([]common.Metrics, 0, 3)
+					for i := 0; i < 3; i++ {
+						metric, ok := <-a.jobs
+						if !ok {
+							log.Printf("jobs channel closed")
+							break
+						}
+						tasks = append(tasks, metric)
 					}
-					if err := utils.Retry(a.sendMetrics)(m); err != nil {
-						log.Printf("Error sending metrics: %v", err)
+					if len(tasks) > 0 {
+						if err := utils.Retry(a.sendMetrics)(tasks); err != nil {
+							log.Printf("Error sending metrics: %v", err)
+						}
 					}
+
+					interval := a.Config.ReportInterval
+					time.Sleep(interval)
 				}
 			}
 		}()
 	}
+	subWg.Wait()
+	log.Println("all workers done")
 }
 
-func (a *AgentApp) sendMetrics(m metrics.StorageMetrics) error {
-	values := make([]common.Metrics, 0, len(m.Metrics))
-	var result common.Metrics
-
-	for _, v := range m.Metrics {
-		metric := common.Metrics{ID: v.ID, MType: v.MType, Value: v.Value, Delta: v.Delta}
-		values = append(values, metric)
+func (a *AgentApp) sendMetrics(metrics []common.Metrics) error {
+	body, err := json.Marshal(metrics)
+	if err != nil {
+		return errors.Unwrap(fmt.Errorf("error encoding metric: %w", err))
 	}
+
+	client := a.Client.R()
+	if a.Config.Key != "" {
+		sha256sum := common.Sha256sum(body, a.Config.Key)
+		client.SetHeader("HashSHA256", sha256sum)
+	}
+
+	if a.Config.PublicKey != nil {
+		body, err = utils.Encrypt(a.Config.PublicKey, body)
+		if err != nil {
+			return fmt.Errorf("error encrypting metrics: %w", errors.Unwrap(err))
+		}
+	}
+
 	log.Println("send metrics")
 
-	res, err := a.Client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(&values).
-		SetResult(&result).
+	// Используйте правильный Content-Type
+	res, err := client.
+		SetHeader("Accept-Encoding", "gzip").
+		SetHeader("Content-Type", "application/octet-stream").
+		SetBody(body).
 		Post(a.Config.UpdateMetricsAddress)
 
 	if err != nil {
-		return errors.Unwrap(err)
+		log.Printf("error sending request: %v\n", err)
+		return fmt.Errorf("error sending request: %w", err)
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", res.StatusCode())
+		log.Printf("error sending request: status: %v, response: %v\n", res.StatusCode(), res)
+		return fmt.Errorf("error sending request: response: %v", res)
 	}
 
-	return nil
-}
-
-func (a *AgentApp) hashMiddleware(c *resty.Client, r *resty.Request) error {
-	if a.Config.Key == "" {
-		return nil
-	}
-	value, ok := r.Body.(*[]common.Metrics)
-	if !ok {
-		log.Printf("not expected type: %T", r.Body)
-		return nil
-	}
-	if value == nil {
-		return nil
-	}
-
-	v, err := json.Marshal(value)
-	if err != nil {
-		log.Printf("can't serialize value: %v", err)
-		return err
-	}
-
-	sha256sum := common.Sha256sum(v, a.Config.Key)
-
-	// Устанавливаем заголовок с хэшем
-	c.Header.Set("HashSHA256", sha256sum)
 	return nil
 }
