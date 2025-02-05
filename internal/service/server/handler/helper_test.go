@@ -2,6 +2,11 @@ package handler
 
 import (
 	"context"
+	"testing"
+
+	"github.com/golang/mock/gomock"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handler/mocks"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
@@ -42,7 +47,7 @@ func (m *MockMetricService) UpdateMetricByValue(_ context.Context, _ common.Metr
 }
 
 func (m *MockMetricService) GetMetricByName(_ context.Context, _ string) (common.Metrics, error) {
-	return common.Metrics{ID: "metric1", MType: common.Counter, Value: linkFloat64(23.5)}, nil
+	return common.Metrics{ID: "metric1", MType: common.Counter, Delta: linkInt64(23)}, nil
 }
 
 func (m *MockMetricService) GetMetricByNameType(_ context.Context, _ string, _ string) (common.Metrics, error) {
@@ -55,4 +60,22 @@ func (m *MockMetricService) InsertMetric(_ context.Context, _ common.Metrics) (c
 		MType: common.Counter,
 		Value: linkFloat64(123.45),
 	}, nil
+}
+
+type testSuite struct {
+	ctrl        *gomock.Controller
+	mockService *mocks.MockService
+	ctx         context.Context
+}
+
+func setupTest(t *testing.T) *testSuite {
+	ctrl := gomock.NewController(t)
+	ctx := context.Background()
+
+	mockService := mocks.NewMockService(ctrl)
+	return &testSuite{
+		ctrl:        ctrl,
+		mockService: mockService,
+		ctx:         ctx,
+	}
 }
