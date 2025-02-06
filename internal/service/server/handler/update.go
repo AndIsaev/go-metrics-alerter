@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -18,7 +19,7 @@ func (h *Handler) SetMetricHandler() http.HandlerFunc {
 
 		// check value is specified for the metric type
 		if !IsCorrectType(MetricType) {
-			http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
+			http.Error(w, "an incorrect value is specified for the metric type", http.StatusBadRequest)
 			return
 		}
 		MetricValue, err := DefineMetricValue(MetricType, chi.URLParam(r, "MetricValue"))
@@ -49,7 +50,7 @@ func (h *Handler) UpdateRowHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if metric.IsValidType() && metric.IsValidValue() {
+		if !metric.IsValidType() || !metric.IsValidValue() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -87,6 +88,7 @@ func (h *Handler) UpdateBatchHandler() http.HandlerFunc {
 		}
 
 		err := h.MetricService.InsertMetrics(r.Context(), metrics)
+		log.Println(err)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

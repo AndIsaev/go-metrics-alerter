@@ -58,7 +58,7 @@ func (m *MockMetricService) InsertMetric(_ context.Context, _ common.Metrics) (c
 	return common.Metrics{
 		ID:    "metric1",
 		MType: common.Counter,
-		Value: linkFloat64(123.45),
+		Delta: linkInt64(123),
 	}, nil
 }
 
