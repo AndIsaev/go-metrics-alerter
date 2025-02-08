@@ -33,6 +33,7 @@ type Config struct {
 	PrivateKey    string `env:"CRYPTO_KEY" json:"crypto_key"`
 	ConfigPath    string `env:"CONFIG"`
 	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
+	IsRPC         bool   `env:"CALL_RPC" json:"rpc"`
 }
 
 // NewConfig create new config
@@ -51,12 +52,23 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.Key, "k", "", "set key")
 	flag.StringVar(&cfg.PrivateKey, "crypto-key", "", "set path of private key")
 	flag.StringVar(&cfg.TrustedSubnet, "t", "", "set trusted subnet")
+	flag.BoolVar(&cfg.IsRPC, "rpc", false, "use rpc server")
 	// config path
 	configFile := flag.String("c", "", "Path to the configuration file")
 	flag.StringVar(configFile, "config", "", "Path to the configuration file (alias for -c)")
 
 	flag.Parse()
 	cfg.ConfigPath = *configFile
+
+	//if envIsRPC := os.Getenv("CALL_RPC"); envIsRPC != "" {
+	//	parseBool, err := strconv.ParseBool(envIsRPC)
+	//	if err == nil {
+	//		cfg.IsRPC = parseBool
+	//	} else {
+	//		log.Println("error parse RPC variable, must be bool value")
+	//	}
+	//
+	//}
 
 	if envTrustedSubnet := os.Getenv("TRUSTED_SUBNET"); envTrustedSubnet != "" {
 		cfg.TrustedSubnet = envTrustedSubnet
@@ -103,6 +115,7 @@ func NewConfig() *Config {
 	} else {
 		cfg.StoreInterval = time.Duration(storeInterval) * time.Second
 	}
+
 	if envConfig := os.Getenv("CONFIG"); envConfig != "" {
 		cfg.ConfigPath = envConfig
 	}

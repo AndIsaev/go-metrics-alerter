@@ -18,6 +18,7 @@ func main() {
 	}
 	app := New()
 	if err := app.StartApp(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 }

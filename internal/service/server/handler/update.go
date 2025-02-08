@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -88,7 +87,6 @@ func (h *Handler) UpdateBatchHandler() http.HandlerFunc {
 		}
 
 		err := h.MetricService.InsertMetrics(r.Context(), metrics)
-		log.Println(err)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
