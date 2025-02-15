@@ -2,22 +2,21 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
-
-	"github.com/go-resty/resty/v2"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client/http"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client/rpc"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/utils"
 )
 
 // AgentApp structure of application
@@ -25,11 +24,10 @@ type AgentApp struct {
 	// Config use for settings of app
 	Config *Config
 	// Client use for requests to server
-	Client     *resty.Client
-	IPResolver utils.IPResolver
-	mu         sync.RWMutex
-	wg         sync.WaitGroup
-	jobs       chan common.Metrics
+	Client client.RequestClient
+	mu     sync.RWMutex
+	wg     sync.WaitGroup
+	jobs   chan common.Metrics
 }
 
 // New create and return new AgentApp
@@ -37,30 +35,36 @@ func New() *AgentApp {
 	app := &AgentApp{}
 	config := NewConfig()
 	app.Config = config
-	app.IPResolver = utils.NewDefaultIPResolver()
-
 	return app
 }
 
 // StartApp user for start application
 func (a *AgentApp) StartApp() {
-	a.Client = a.initHTTPClient()
 	a.jobs = make(chan common.Metrics)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// init Client for requests
+	a.initRequestClient(ctx, cancel)
 
 	// обработка сигналов завершения
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
-	// горутина для прослушивания сигналов
-	a.wg.Add(1)
-	go func() {
-		defer a.wg.Done()
-		sig := <-sigs
-		log.Printf("Received signal: %s", sig)
-		cancel() // отменяем контекст
-	}()
+	select {
+	case <-ctx.Done():
+		log.Println("context done -> exit from StartApp")
+		return
+	default:
+		// горутина для прослушивания сигналов
+		a.wg.Add(1)
+		go func() {
+			defer a.wg.Done()
+			sig := <-sigs
+			log.Printf("Received signal: %s", sig)
+			cancel() // отменяем контекст
+		}()
+	}
 
 	a.runReport(ctx)
 
@@ -71,10 +75,46 @@ func (a *AgentApp) StartApp() {
 	log.Println("application stopped gracefully")
 }
 
-func (a *AgentApp) initHTTPClient() *resty.Client {
-	cli := resty.New()
-	cli.SetTimeout(time.Second * 5)
-	return cli
+// initRequestClient init request client interface
+func (a *AgentApp) initRequestClient(ctx context.Context, cancel context.CancelFunc) {
+	select {
+	case <-ctx.Done():
+		log.Println("context done -> exit from initRequestClient")
+		return
+	default:
+
+		if !a.Config.RPCClient {
+			a.initHTTPClient()
+		} else {
+			a.initGRPCClient(cancel)
+		}
+	}
+}
+
+// initHTTPClient - init http client
+func (a *AgentApp) initHTTPClient() {
+	ipResolver := utils.NewDefaultIPResolver(a.Config.Address)
+	httpClient := http.NewClient(
+		a.Config.UpdateMetricsAddress,
+		ipResolver,
+		a.Config.Key,
+		a.Config.PublicKey,
+	)
+	a.Client = httpClient
+}
+
+// initGRPCClient - init grpc client
+func (a *AgentApp) initGRPCClient(cancel context.CancelFunc) {
+	conn, err := grpc.NewClient(a.Config.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Printf("error init grpc client, cancel context: %v\n", err)
+		conn.Close()
+		cancel()
+		return
+	}
+	grpcClient := rpc.NewGRPCClient(conn)
+	rpcClient := rpc.NewClient(grpcClient)
+	a.Client = rpcClient
 }
 
 func (a *AgentApp) runReport(ctx context.Context) {
@@ -139,7 +179,7 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 						tasks = append(tasks, metric)
 					}
 					if len(tasks) > 0 {
-						if err := utils.Retry(a.sendMetrics)(tasks); err != nil {
+						if err := utils.Retry(a.Client.SendMetrics)(tasks); err != nil {
 							log.Printf("Error sending metrics: %v", err)
 						}
 					}
@@ -152,51 +192,4 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 	}
 	subWg.Wait()
 	log.Println("all workers done")
-}
-
-func (a *AgentApp) sendMetrics(metrics []common.Metrics) error {
-	ip, err := a.IPResolver.GetLocalIP(a.Config.Address)
-	if err != nil {
-		log.Printf("Error getting local IP: %v\n", err)
-		return err
-	}
-
-	body, err := json.Marshal(metrics)
-	if err != nil {
-		return errors.Unwrap(fmt.Errorf("error encoding metric: %w", err))
-	}
-
-	client := a.Client.R()
-	if a.Config.Key != "" {
-		sha256sum := common.Sha256sum(body, a.Config.Key)
-		client.SetHeader("HashSHA256", sha256sum)
-	}
-
-	if a.Config.PublicKey != nil {
-		body, err = utils.Encrypt(a.Config.PublicKey, body)
-		if err != nil {
-			return fmt.Errorf("error encrypting metrics: %w", errors.Unwrap(err))
-		}
-	}
-
-	log.Println("send metrics")
-
-	res, err := client.
-		SetHeader("Accept-Encoding", "gzip").
-		SetHeader("Content-Type", "application/octet-stream").
-		SetHeader("X-Real-IP", ip).
-		SetBody(body).
-		Post(a.Config.UpdateMetricsAddress)
-
-	if err != nil {
-		log.Printf("error sending request: %v\n", err)
-		return fmt.Errorf("error sending request: %w", err)
-	}
-
-	if res.StatusCode() != http.StatusOK {
-		log.Printf("error sending request: status: %v, response: %v\n", res.StatusCode(), res)
-		return fmt.Errorf("error sending request: response: %v", res)
-	}
-
-	return nil
 }

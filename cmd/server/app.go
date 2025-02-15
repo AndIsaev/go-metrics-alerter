@@ -275,7 +275,7 @@ func (a *ServerApp) runServer(ctx context.Context) {
 
 	// Запускаем сервер в отдельной горутине
 	go func() {
-		if !a.Config.IsRPC {
+		if !a.Config.RPCServer {
 			a.Handler.MetricService = &server.Methods{Storage: a.Conn}
 			// init http router
 			a.initRouter()
@@ -309,7 +309,7 @@ func (a *ServerApp) runServer(ctx context.Context) {
 		shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancelShutdown()
 
-		if a.Config.IsRPC {
+		if a.Config.RPCServer {
 			a.GRPCServer.GracefulStop()
 			log.Println("GRPC server shutdown gracefully")
 			return

@@ -1,20 +1,24 @@
 package utils
 
-import "net"
+import (
+	"net"
+)
 
 type IPResolver interface {
-	GetLocalIP(address string) (string, error)
+	GetLocalIP() (string, error)
 }
 
-type DefaultIPResolver struct{}
+type DefaultIPResolver struct {
+	Address string
+}
 
-func NewDefaultIPResolver() *DefaultIPResolver {
-	return &DefaultIPResolver{}
+func NewDefaultIPResolver(address string) *DefaultIPResolver {
+	return &DefaultIPResolver{Address: address}
 }
 
 // GetLocalIP get your ip address
-func (resolver *DefaultIPResolver) GetLocalIP(address string) (string, error) {
-	addr, err := net.ResolveTCPAddr("tcp", address)
+func (r *DefaultIPResolver) GetLocalIP() (string, error) {
+	addr, err := net.ResolveTCPAddr("tcp", r.Address)
 	if err != nil {
 		return "", err
 	}
