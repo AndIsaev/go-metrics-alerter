@@ -28,5 +28,6 @@ func (p *MetricServiceServer) InsertBatch(ctx context.Context, req *pb.InsertBat
 		log.Printf("error update metrics: %v", err)
 		return nil, err
 	}
+	log.Printf("success update metrics, status: %v\n", codes.OK)
 	return &pb.InsertBatchResponse{StatusCode: uint32(codes.OK), Message: "success"}, nil
 }

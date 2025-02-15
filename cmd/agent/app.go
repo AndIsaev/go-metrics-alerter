@@ -179,7 +179,7 @@ func (a *AgentApp) runWorkers(ctx context.Context) {
 						tasks = append(tasks, metric)
 					}
 					if len(tasks) > 0 {
-						if err := utils.Retry(a.Client.SendMetrics)(tasks); err != nil {
+						if err := utils.Retry(a.Client.SendMetrics)(ctx, tasks); err != nil {
 							log.Printf("Error sending metrics: %v", err)
 						}
 					}
