@@ -14,14 +14,14 @@ import (
 )
 
 // SendMetric using the method to establish indicators
-func (c *Client) SendMetric(url string, body common.Metrics) error {
+func (c *Client) SendMetric(body common.Metrics) error {
 	var result common.Metrics
 
 	res, err := c.Client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(body).
 		SetResult(&result).
-		Post(url)
+		Post(c.URL)
 
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (c *Client) SendMetrics(ctx context.Context, metrics []common.Metrics) erro
 
 		if res.StatusCode() != http.StatusOK {
 			log.Printf("error sending request: status: %v, response: %v\n", res.StatusCode(), res)
-			return fmt.Errorf("error sending request: response: %v", res)
+			return fmt.Errorf("error sending request: %v", res)
 		}
 	}
 

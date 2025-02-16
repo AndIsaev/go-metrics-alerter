@@ -49,22 +49,28 @@ type Config struct {
 // NewConfig create new config
 func NewConfig() *Config {
 	cfg := &Config{StorageMetrics: metrics.NewListMetrics()}
+	fs := flag.NewFlagSet("config", flag.ContinueOnError)
+
 	var pollIntervalSeconds uint64
 	var reportIntervalSeconds uint64
 	var rateLimit uint64
 
-	flag.StringVar(&cfg.Address, "a", ":8080", "address")
-	flag.Uint64Var(&reportIntervalSeconds, "r", 10, "seconds of report interval")
-	flag.Uint64Var(&pollIntervalSeconds, "p", 2, "seconds of poll interval")
-	flag.StringVar(&cfg.Key, "k", "", "set key")
-	flag.Uint64Var(&rateLimit, "l", 10, "rate limit")
-	flag.StringVar(&cfg.PublicKeyPath, "crypto-key", "", "set path of public key")
-	flag.BoolVar(&cfg.RPCClient, "rpc", false, "set true if yor want use rrc")
+	fs.StringVar(&cfg.Address, "a", ":8080", "address")
+	fs.Uint64Var(&reportIntervalSeconds, "r", 10, "seconds of report interval")
+	fs.Uint64Var(&pollIntervalSeconds, "p", 2, "seconds of poll interval")
+	fs.StringVar(&cfg.Key, "k", "", "set key")
+	fs.Uint64Var(&rateLimit, "l", 10, "rate limit")
+	fs.StringVar(&cfg.PublicKeyPath, "crypto-key", "", "set path of public key")
+	fs.BoolVar(&cfg.RPCClient, "rpc", false, "set true if yor want use rpc")
 	// config path
-	configFile := flag.String("c", "", "Path to the configuration file")
-	flag.StringVar(configFile, "config", "", "Path to the configuration file (alias for -c)")
+	configFile := fs.String("c", "", "Path to the configuration file")
+	fs.StringVar(configFile, "config", "", "Path to the configuration file (alias for -c)")
 
-	flag.Parse()
+	err := fs.Parse(os.Args[1:])
+	if err != nil {
+		log.Println("Error parsing flags:", err)
+	}
+
 	cfg.ConfigPath = *configFile
 
 	if envRPCClient := os.Getenv("RPC_CLIENT"); envRPCClient != "" {

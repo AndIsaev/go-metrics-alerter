@@ -1,81 +1,64 @@
 package main
 
-//
-//import (
-//	"errors"
-//	"net/http"
-//	"testing"
-//	"time"
-//
-//	"github.com/go-resty/resty/v2"
-//	"github.com/jarcoal/httpmock"
-//	"github.com/stretchr/testify/assert"
-//
-//	"github.com/AndIsaev/go-metrics-alerter/internal/common"
-//
-//	"github.com/stretchr/testify/require"
-//)
-//
-//func linkInt64(num int64) *int64 {
-//	return &num
-//}
-//
-//// MockIPResolver — мок-реализация интерфейса IPResolver для тестов
-//type MockIPResolver struct {
-//	IP  string
-//	Err error
-//}
-//
-//// GetLocalIP возвращает заранее определенные значения
-//func (mock *MockIPResolver) GetLocalIP(_ string) (string, error) {
-//	return mock.IP, mock.Err
-//}
-//
-//func TestInitHTTPClient(t *testing.T) {
-//	app := New()
-//	client := app.initHTTPClient()
-//
-//	require.NotNil(t, client)
-//	require.Equal(t, time.Second*5, client.GetClient().Timeout)
-//}
-//
-//func TestSendMetrics(t *testing.T) {
-//	defer httpmock.DeactivateAndReset()
-//	mockResolver := &MockIPResolver{IP: "192.168.0.1", Err: nil}
-//
-//	app := &AgentApp{
-//		Config:     &Config{},
-//		Client:     resty.New(),
-//		IPResolver: mockResolver,
-//	}
-//	httpmock.ActivateNonDefault(app.Client.GetClient())
-//
-//	metrics := []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: linkInt64(1)}}
-//
-//	t.Run("success", func(t *testing.T) {
-//		httpmock.RegisterResponder("POST", app.Config.UpdateMetricsAddress,
-//			httpmock.NewBytesResponder(http.StatusOK, nil))
-//
-//		err := app.sendMetrics(metrics)
-//		assert.NoError(t, err)
-//	})
-//
-//	t.Run("bad request", func(t *testing.T) {
-//		httpmock.RegisterResponder("POST", app.Config.UpdateMetricsAddress,
-//			httpmock.NewStringResponder(http.StatusBadRequest, `Bad Request`))
-//
-//		err := app.sendMetrics(metrics)
-//		assert.Error(t, err)
-//	})
-//
-//	t.Run("network error", func(t *testing.T) {
-//		httpmock.RegisterResponder("POST", app.Config.UpdateMetricsAddress,
-//			func(req *http.Request) (*http.Response, error) {
-//				return nil, errors.New("some network error")
-//			})
-//
-//		err := app.sendMetrics(metrics)
-//		assert.Error(t, err)
-//		assert.Contains(t, err.Error(), "some network error")
-//	})
-//}
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client/http"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/client/rpc"
+)
+
+func TestNew(t *testing.T) {
+	app := New()
+	assert.NotNil(t, app.Config)
+	assert.IsType(t, &Config{}, app.Config)
+}
+
+func TestInitRequestClient(t *testing.T) {
+	app := New()
+	app.Config = NewConfig()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tests := []struct {
+		name   string
+		http   bool
+		client client.RequestClient
+	}{
+		{name: "http client", http: true, client: &http.Client{}},
+		{name: "grpc client", http: false, client: &rpc.Client{}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !tt.http {
+				app.Config.RPCClient = true
+			}
+			app.initRequestClient(ctx, cancel)
+			assert.IsType(t, tt.client, app.Client)
+		})
+	}
+}
+
+func TestInitHTTPClient(t *testing.T) {
+	app := New()
+	app.Config = NewConfig()
+
+	app.initHTTPClient()
+
+	assert.IsType(t, &http.Client{}, app.Client)
+}
+
+func TestInitGRPCClient(t *testing.T) {
+	_, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	app := New()
+	app.Config = NewConfig()
+
+	app.initGRPCClient(cancel)
+
+	assert.IsType(t, &rpc.Client{}, app.Client)
+}
