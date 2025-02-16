@@ -58,7 +58,7 @@ func ExampleHandler_UpdateRowHandler() {
 		MetricService: &MockMetricService{},
 	}
 
-	metric := common.Metrics{ID: "metric1", MType: "counter", Delta: linkInt64(123)}
+	metric := common.Metrics{ID: "metric1", MType: "counter", Delta: common.LinkInt64(123)}
 
 	requestBody, _ := json.Marshal(metric)
 
@@ -203,8 +203,8 @@ func TestUpdateRowHandler(t *testing.T) {
 			body:           `{"id":"metric1","type":"counter","delta":10}`,
 			setup: func(ts *testSuite) {
 				testMock.mockService.EXPECT().
-					InsertMetric(context.Background(), common.Metrics{ID: "metric1", MType: common.Counter, Delta: linkInt64(10)}).
-					Return(common.Metrics{ID: "metric1", MType: common.Counter, Delta: linkInt64(10)}, nil)
+					InsertMetric(context.Background(), common.Metrics{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)}).
+					Return(common.Metrics{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)}, nil)
 			},
 		},
 		{
@@ -215,7 +215,7 @@ func TestUpdateRowHandler(t *testing.T) {
 			body:           `{"id":"metric1","type":"counter","delta":10}`,
 			setup: func(ts *testSuite) {
 				testMock.mockService.EXPECT().
-					InsertMetric(context.Background(), common.Metrics{ID: "metric1", MType: common.Counter, Delta: linkInt64(10)}).
+					InsertMetric(context.Background(), common.Metrics{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)}).
 					Return(common.Metrics{}, errors.New("error update metric"))
 			},
 		},
@@ -270,11 +270,11 @@ func TestUpdateBatchHandler(t *testing.T) {
 			expectedStatus:     http.StatusOK,
 			result:             `{"message":"success"}`,
 			callFunc:           true,
-			expectedResultFunc: []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: linkInt64(10)}},
+			expectedResultFunc: []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)}},
 			body:               `[{"id":"metric1","type":"counter","delta":10}]`,
 			setup: func(ts *testSuite) {
 				testMock.mockService.EXPECT().
-					InsertMetrics(context.Background(), []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: linkInt64(10)}}).
+					InsertMetrics(context.Background(), []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)}}).
 					Return(nil)
 			},
 		},
@@ -284,10 +284,10 @@ func TestUpdateBatchHandler(t *testing.T) {
 			result:             "",
 			callFunc:           true,
 			body:               `[{"id":"metric1","type":"counter","delta":10}]`,
-			expectedResultFunc: []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: linkInt64(10)}},
+			expectedResultFunc: []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)}},
 			setup: func(ts *testSuite) {
 				testMock.mockService.EXPECT().
-					InsertMetrics(context.Background(), []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: linkInt64(10)}}).
+					InsertMetrics(context.Background(), []common.Metrics{{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)}}).
 					Return(errors.New("error update metric"))
 			},
 		},

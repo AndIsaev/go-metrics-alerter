@@ -53,7 +53,7 @@ func TestIndexHandler(t *testing.T) {
 			setup: func(ts *testSuite) {
 				testMock.mockService.EXPECT().
 					ListMetrics(context.Background()).
-					Return([]common.Metrics{{ID: "metric1", MType: common.Counter, Delta: linkInt64(10)}}, nil)
+					Return([]common.Metrics{{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)}}, nil)
 			},
 		},
 		{

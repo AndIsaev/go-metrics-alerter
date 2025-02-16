@@ -81,7 +81,7 @@ func TestGetHandler(t *testing.T) {
 			setup: func(ts *testSuite) {
 				ts.mockService.EXPECT().
 					GetMetricByName(ts.ctx, "metric1").
-					Return(common.Metrics{ID: "metric1", MType: common.Gauge, Delta: linkInt64(25)}, nil)
+					Return(common.Metrics{ID: "metric1", MType: common.Gauge, Delta: common.LinkInt64(25)}, nil)
 			},
 		},
 		{
@@ -145,7 +145,7 @@ func TestGetByURLParamHandler(t *testing.T) {
 			mType:              common.Counter,
 			mName:              "metric1",
 			result:             "10",
-			expectedResultFunc: common.Metrics{ID: "metric1", MType: common.Counter, Delta: linkInt64(10)},
+			expectedResultFunc: common.Metrics{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)},
 			callFunc:           true,
 		},
 		{
@@ -155,7 +155,7 @@ func TestGetByURLParamHandler(t *testing.T) {
 			mType:              common.Gauge,
 			mName:              "metric1",
 			result:             "10.54",
-			expectedResultFunc: common.Metrics{ID: "metric1", MType: common.Gauge, Value: linkFloat64(10.54)},
+			expectedResultFunc: common.Metrics{ID: "metric1", MType: common.Gauge, Value: common.LinkFloat64(10.54)},
 			callFunc:           true,
 		},
 		{

@@ -57,7 +57,7 @@ func TestPgStorage_GetByName(t *testing.T) {
 	expectedMetric := common.Metrics{
 		ID:    "metric1",
 		MType: common.Gauge,
-		Value: linkFloat64(24.5),
+		Value: common.LinkFloat64(24.5),
 	}
 
 	row := sqlmock.NewRows([]string{"id", "type", "value", "delta"}).
@@ -87,7 +87,7 @@ func TestPgStorage_GetByNameType(t *testing.T) {
 	expectedMetric := common.Metrics{
 		ID:    "metric1",
 		MType: common.Gauge,
-		Value: linkFloat64(20.5),
+		Value: common.LinkFloat64(20.5),
 		Delta: nil,
 	}
 
@@ -117,13 +117,13 @@ func TestPgStorage_Insert(t *testing.T) {
 	inputMetric := common.Metrics{
 		ID:    "metric1",
 		MType: common.Gauge,
-		Value: linkFloat64(42.0),
+		Value: common.LinkFloat64(42.0),
 	}
 
 	expectedMetric := common.Metrics{
 		ID:    "metric1",
 		MType: common.Gauge,
-		Value: linkFloat64(42.0),
+		Value: common.LinkFloat64(42.0),
 	}
 
 	mock.ExpectBegin()
@@ -153,7 +153,7 @@ func TestPgStorage_InsertError(t *testing.T) {
 	inputMetric := common.Metrics{
 		ID:    "metric1",
 		MType: common.Gauge,
-		Value: linkFloat64(42.0),
+		Value: common.LinkFloat64(42.0),
 	}
 
 	mock.ExpectBegin()
@@ -180,7 +180,7 @@ func TestPgStorage_create(t *testing.T) {
 	inputMetric := common.Metrics{
 		ID:    "metric1",
 		MType: common.Gauge,
-		Value: linkFloat64(42.0),
+		Value: common.LinkFloat64(42.0),
 	}
 
 	mock.ExpectExec(`(?i)insert into metric \(id, type, delta, value\) values \(\$1, \$2, \$3, \$4\) on conflict \(id\) do update set delta = metric\.delta \+ \$3, value = \$4;`).
@@ -206,7 +206,7 @@ func TestPgStorage_createError(t *testing.T) {
 	inputMetric := common.Metrics{
 		ID:    "metric1",
 		MType: common.Gauge,
-		Value: linkFloat64(42.0),
+		Value: common.LinkFloat64(42.0),
 	}
 
 	mock.ExpectExec(`(?i)insert into metric \(id, type, delta, value\) values \(\$1, \$2, \$3, \$4\) on conflict \(id\) do update set delta = metric\.delta \+ \$3, value = \$4;`).
@@ -233,12 +233,12 @@ func TestPgStorage_InsertBatch(t *testing.T) {
 		{
 			ID:    "metric1",
 			MType: common.Gauge,
-			Value: linkFloat64(42.0),
+			Value: common.LinkFloat64(42.0),
 		},
 		{
 			ID:    "metric2",
 			MType: common.Counter,
-			Delta: linkInt64(10),
+			Delta: common.LinkInt64(10),
 		},
 	}
 
@@ -273,12 +273,12 @@ func TestPgStorage_InsertBatchBeginError(t *testing.T) {
 		{
 			ID:    "metric1",
 			MType: common.Gauge,
-			Value: linkFloat64(42.0),
+			Value: common.LinkFloat64(42.0),
 		},
 		{
 			ID:    "metric2",
 			MType: common.Counter,
-			Delta: linkInt64(10),
+			Delta: common.LinkInt64(10),
 		},
 	}
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("begin transaction error"))
@@ -302,12 +302,12 @@ func TestPgStorage_InsertBatchExecError(t *testing.T) {
 		{
 			ID:    "metric1",
 			MType: common.Gauge,
-			Value: linkFloat64(42.0),
+			Value: common.LinkFloat64(42.0),
 		},
 		{
 			ID:    "metric2",
 			MType: common.Counter,
-			Delta: linkInt64(10),
+			Delta: common.LinkInt64(10),
 		},
 	}
 	mock.ExpectBegin()
@@ -334,7 +334,7 @@ func TestPgStorage_InsertBatchCommitError(t *testing.T) {
 		{
 			ID:    "metric1",
 			MType: common.Gauge,
-			Value: linkFloat64(42.0),
+			Value: common.LinkFloat64(42.0),
 		},
 	}
 	mock.ExpectBegin()

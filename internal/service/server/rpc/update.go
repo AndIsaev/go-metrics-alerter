@@ -19,8 +19,8 @@ func (p *MetricServiceServer) InsertBatch(ctx context.Context, req *pb.InsertBat
 			common.Metrics{
 				ID:    val.Id,
 				MType: val.Type,
-				Value: linkFloat64(val.Value),
-				Delta: linkInt64(val.Delta)},
+				Value: common.LinkFloat64(val.Value),
+				Delta: common.LinkInt64(val.Delta)},
 		)
 	}
 	err := p.Storage.Metric().InsertBatch(ctx, metrics)
