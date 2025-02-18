@@ -31,7 +31,7 @@ type Config struct {
 	// RateLimit limit connections to server
 	RateLimit int `env:"RATE_LIMIT" json:"rate_limit"`
 	// StorageMetrics storage with metrics
-	StorageMetrics *metrics.StorageMetrics
+	StorageMetrics metrics.Storage
 	// UpdateMetricAddress address for update one metric
 	UpdateMetricAddress string
 	// UpdateMetricsAddress address for update batch with metrics

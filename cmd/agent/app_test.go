@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"testing"
+	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 
 	"github.com/stretchr/testify/assert"
 
@@ -61,4 +64,54 @@ func TestInitGRPCClient(t *testing.T) {
 	app.initGRPCClient(cancel)
 
 	assert.IsType(t, &rpc.Client{}, app.Client)
+}
+
+type MockStorageMetrics struct {
+	Metrics map[string]common.Metrics
+}
+
+func (m *MockStorageMetrics) Pull() {
+}
+
+func (m *MockStorageMetrics) List() map[string]common.Metrics {
+	return m.Metrics
+}
+
+func NewListMockStorageMetrics() *MockStorageMetrics {
+	mockMetrics := make(map[string]common.Metrics)
+	mockMetrics["metric1"] = common.Metrics{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(1)}
+	return &MockStorageMetrics{Metrics: mockMetrics}
+}
+
+func TestPullMetrics(t *testing.T) {
+	mapMetrics := NewListMockStorageMetrics()
+
+	mockStorage := &MockStorageMetrics{Metrics: mapMetrics.Metrics}
+	config := &Config{
+		StorageMetrics: mockStorage,
+		PollInterval:   100 * time.Millisecond,
+	}
+
+	app := &AgentApp{
+		Config: config,
+		jobs:   make(chan common.Metrics, 10),
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	app.wg.Add(1)
+	go app.pullMetrics(ctx)
+
+	time.Sleep(config.PollInterval * 2)
+
+	for _, expMetric := range mapMetrics.Metrics {
+		select {
+		case metric := <-app.jobs:
+			assert.Equal(t, expMetric, metric, "Expected metric not received from channel.")
+		default:
+			t.Errorf("expected metric in channel, but got none")
+		}
+	}
+
+	cancel()
+	app.wg.Wait()
 }

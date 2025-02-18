@@ -16,6 +16,11 @@ import (
 var memStats runtime.MemStats
 var pollCount int64
 
+type Storage interface {
+	Pull()
+	List() map[string]common.Metrics
+}
+
 // StorageMetrics stores map of metrics
 type StorageMetrics struct {
 	Metrics map[string]common.Metrics
@@ -25,6 +30,10 @@ type StorageMetrics struct {
 // NewListMetrics init storage metrics
 func NewListMetrics() *StorageMetrics {
 	return &StorageMetrics{Metrics: make(map[string]common.Metrics)}
+}
+
+func (sm *StorageMetrics) List() map[string]common.Metrics {
+	return sm.Metrics
 }
 
 // Pull get metrics

@@ -139,7 +139,7 @@ func (a *AgentApp) pullMetrics(ctx context.Context) {
 
 			a.mu.RLock()
 			// Передача метрик в канал
-			for _, val := range a.Config.StorageMetrics.Metrics {
+			for _, val := range a.Config.StorageMetrics.List() {
 				select {
 				case a.jobs <- val:
 				case <-ctx.Done():
