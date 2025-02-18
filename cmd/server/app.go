@@ -42,7 +42,7 @@ type ServerApp struct {
 	Server     *http.Server
 	GRPCServer *grpc.Server
 	Handler    *handler.Handler
-	fm         *file.Manager
+	fm         file.Provider
 	wg         sync.WaitGroup
 	chMetrics  chan []common.Metrics
 }
@@ -215,10 +215,10 @@ func (a *ServerApp) initStorage(ctx context.Context) error {
 
 			a.Conn = conn
 		} else {
-			var syncFileManager *file.Manager
+			var FileProvider file.Provider
 			var syncSave = false
 			if a.Config.FileStoragePath != "" {
-				if err := a.fm.CreateDir(a.Config.FileStoragePath); err != nil {
+				if err := file.CreateDir(a.Config.FileStoragePath); err != nil {
 					log.Printf("error create directory: %s\n", err.Error())
 					return err
 				}
@@ -231,14 +231,14 @@ func (a *ServerApp) initStorage(ctx context.Context) error {
 				a.fm = fileManager
 
 				if a.Config.StoreInterval == 0 {
-					syncFileManager = fileManager
+					FileProvider = fileManager
 					syncSave = true
 				}
 				if a.Config.Restore {
-					syncFileManager = fileManager
+					FileProvider = fileManager
 				}
 			}
-			a.Conn = inmemory.NewMemStorage(syncFileManager, syncSave)
+			a.Conn = inmemory.NewMemStorage(FileProvider, syncSave)
 		}
 
 		if a.Config.Restore {

@@ -1,12 +1,21 @@
 package file
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
+
+type Provider interface {
+	Overwrite(ctx context.Context, metrics []common.Metrics) error
+	ReadFile() ([]common.Metrics, error)
+	Close() error
+}
 
 // Manager manage file on disk
 type Manager struct {
@@ -32,4 +41,16 @@ func NewManager(path string) (*Manager, error) {
 	}
 
 	return fm, nil
+}
+
+// CreateDir create dir
+func CreateDir(fileStoragePath string) error {
+	if _, err := os.Stat(fileStoragePath); os.IsNotExist(err) {
+		if err = os.Mkdir(fileStoragePath, 0755); err != nil {
+			log.Printf("the directory %s not created\n", fileStoragePath)
+			return err
+		}
+	}
+	log.Printf("the directory %s is done\n", fileStoragePath)
+	return nil
 }

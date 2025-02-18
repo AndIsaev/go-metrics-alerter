@@ -12,13 +12,13 @@ import (
 // MemStorage storage in memory
 type MemStorage struct {
 	Metrics  map[string]common.Metrics
-	fm       *file.Manager
+	fm       file.Provider
 	syncSave bool
 	mu       sync.RWMutex
 }
 
 // NewMemStorage init storage in memory
-func NewMemStorage(fm *file.Manager, syncSave bool) *MemStorage {
+func NewMemStorage(fm file.Provider, syncSave bool) *MemStorage {
 	log.Printf("init in memory storage")
 	return &MemStorage{
 		Metrics:  make(map[string]common.Metrics),
