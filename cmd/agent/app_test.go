@@ -115,3 +115,55 @@ func TestPullMetrics(t *testing.T) {
 	cancel()
 	app.wg.Wait()
 }
+
+// Псевдо-реализация клиентского интерфейса
+type MockClient struct {
+	sendCalled int
+	sendErr    error
+}
+
+func (c *MockClient) SendMetrics(_ context.Context, _ []common.Metrics) error {
+	if c.sendErr != nil {
+		return c.sendErr
+	}
+	c.sendCalled++
+	return nil
+}
+
+func TestRunWorkers(t *testing.T) {
+	mockClient := &MockClient{}
+	config := &Config{
+		RateLimit:      3,
+		ReportInterval: 50 * time.Millisecond,
+	}
+
+	app := &AgentApp{
+		Config: config,
+		Client: mockClient,
+		jobs:   make(chan common.Metrics, 3),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+
+	app.wg.Add(1)
+	go app.runWorkers(ctx)
+
+	metrics := []common.Metrics{
+		{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(1)},
+		{ID: "metric2", MType: common.Counter, Delta: common.LinkInt64(5)},
+		{ID: "metric3", MType: common.Gauge, Value: common.LinkFloat64(12.1)},
+	}
+
+	for _, metric := range metrics {
+		app.jobs <- metric
+	}
+
+	close(app.jobs)
+
+	time.Sleep(300 * time.Millisecond)
+
+	assert.Greater(t, mockClient.sendCalled, 0, "Expected SendMetrics to be called")
+
+	app.wg.Wait()
+}
