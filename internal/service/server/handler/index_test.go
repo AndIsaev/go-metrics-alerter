@@ -1,9 +1,16 @@
 package handler
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
 func ExampleHandler_IndexHandler() {
@@ -25,4 +32,56 @@ func ExampleHandler_IndexHandler() {
 	// Output:
 	// Status Code: 200
 	// Response Body: [{"id":"metric1","type":"counter","delta":1},{"id":"metric2","type":"gauge","value":10.4}]
+}
+
+func TestIndexHandler(t *testing.T) {
+	testMock := setupTest(t)
+	handler := &Handler{MetricService: testMock.mockService}
+
+	tests := []struct {
+		name           string
+		expectedStatus int
+		result         string
+		callFunc       bool
+		setup          func(ts *testSuite)
+	}{
+		{
+			name:           "success index",
+			expectedStatus: http.StatusOK,
+			result:         `[{"id":"metric1","type":"counter","delta":10}]`,
+			callFunc:       true,
+			setup: func(ts *testSuite) {
+				testMock.mockService.EXPECT().
+					ListMetrics(context.Background()).
+					Return([]common.Metrics{{ID: "metric1", MType: common.Counter, Delta: common.LinkInt64(10)}}, nil)
+			},
+		},
+		{
+			name:           "error getting list metric",
+			expectedStatus: http.StatusInternalServerError,
+			result:         "",
+			callFunc:       true,
+			setup: func(ts *testSuite) {
+				testMock.mockService.EXPECT().
+					ListMetrics(context.Background()).
+					Return([]common.Metrics{}, errors.New("error getting list metric"))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			rec := httptest.NewRecorder()
+
+			if tt.callFunc {
+				tt.setup(testMock)
+			}
+
+			handler.IndexHandler().ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+			assert.Equal(t, tt.result, rec.Body.String())
+		})
+	}
 }

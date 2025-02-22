@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 )
 
@@ -16,12 +15,8 @@ func (h *Handler) IndexHandler() http.HandlerFunc {
 			return
 		}
 
-		response, err := json.Marshal(metrics)
-		if err != nil {
-			log.Println("error serialize metrics")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		response, _ := json.Marshal(metrics)
+
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
 	}

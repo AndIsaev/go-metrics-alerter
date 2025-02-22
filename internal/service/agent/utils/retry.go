@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"errors"
 	"log"
 	"time"
@@ -8,19 +9,19 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
-type Object func(metrics []common.Metrics) error
+type Object func(ctx context.Context, metrics []common.Metrics) error
 
 // Retry - декоратор, реализующий повторный вызов функции
 func Retry(fn Object) Object {
-	return func(metrics []common.Metrics) error {
+	return func(ctx context.Context, metrics []common.Metrics) error {
 		sleep := time.Second * 1
 		var err error
 
-		err = fn(metrics)
+		err = fn(ctx, metrics)
 
 		if err != nil {
 			for attempt := 1; attempt < 4; attempt++ {
-				if err = fn(metrics); err != nil {
+				if err = fn(ctx, metrics); err != nil {
 					log.Printf("attempt - %d; sleep - %v seconds\n", attempt, sleep)
 					time.Sleep(sleep)
 					sleep += time.Second * 2

@@ -21,7 +21,7 @@ func (h *Handler) GetByURLParamHandler() http.HandlerFunc {
 
 		// check value is specified for the metric type
 		if !IsCorrectType(MetricType) {
-			http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
+			http.Error(w, "an incorrect value is specified for the metric type", http.StatusBadRequest)
 			return
 		}
 

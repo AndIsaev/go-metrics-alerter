@@ -31,7 +31,7 @@ type Config struct {
 	// RateLimit limit connections to server
 	RateLimit int `env:"RATE_LIMIT" json:"rate_limit"`
 	// StorageMetrics storage with metrics
-	StorageMetrics *metrics.StorageMetrics
+	StorageMetrics metrics.Storage
 	// UpdateMetricAddress address for update one metric
 	UpdateMetricAddress string
 	// UpdateMetricsAddress address for update batch with metrics
@@ -40,6 +40,8 @@ type Config struct {
 	PublicKey *rsa.PublicKey
 	// PublicKeyPath path of public key
 	PublicKeyPath string `env:"CRYPTO_KEY" json:"crypto_key"`
+	// RPCClient define bool variable for use rpc client
+	RPCClient bool `env:"RPC_CLIENT" json:"rpc_client"`
 	// ConfigPath path of config file
 	ConfigPath string `env:"CONFIG"`
 }
@@ -47,22 +49,38 @@ type Config struct {
 // NewConfig create new config
 func NewConfig() *Config {
 	cfg := &Config{StorageMetrics: metrics.NewListMetrics()}
+	fs := flag.NewFlagSet("config", flag.ContinueOnError)
+
 	var pollIntervalSeconds uint64
 	var reportIntervalSeconds uint64
 	var rateLimit uint64
 
-	flag.StringVar(&cfg.Address, "a", ":8080", "address")
-	flag.Uint64Var(&reportIntervalSeconds, "r", 10, "seconds of report interval")
-	flag.Uint64Var(&pollIntervalSeconds, "p", 2, "seconds of poll interval")
-	flag.StringVar(&cfg.Key, "k", "", "set key")
-	flag.Uint64Var(&rateLimit, "l", 10, "rate limit")
-	flag.StringVar(&cfg.PublicKeyPath, "crypto-key", "", "set path of public key")
+	fs.StringVar(&cfg.Address, "a", ":8080", "address")
+	fs.Uint64Var(&reportIntervalSeconds, "r", 10, "seconds of report interval")
+	fs.Uint64Var(&pollIntervalSeconds, "p", 2, "seconds of poll interval")
+	fs.StringVar(&cfg.Key, "k", "", "set key")
+	fs.Uint64Var(&rateLimit, "l", 10, "rate limit")
+	fs.StringVar(&cfg.PublicKeyPath, "crypto-key", "", "set path of public key")
+	fs.BoolVar(&cfg.RPCClient, "rpc", false, "set true if yor want use rpc")
 	// config path
-	configFile := flag.String("c", "", "Path to the configuration file")
-	flag.StringVar(configFile, "config", "", "Path to the configuration file (alias for -c)")
+	configFile := fs.String("c", "", "Path to the configuration file")
+	fs.StringVar(configFile, "config", "", "Path to the configuration file (alias for -c)")
 
-	flag.Parse()
+	err := fs.Parse(os.Args[1:])
+	if err != nil {
+		log.Println("Error parsing flags:", err)
+	}
+
 	cfg.ConfigPath = *configFile
+
+	if envRPCClient := os.Getenv("RPC_CLIENT"); envRPCClient != "" {
+		parseBool, err := strconv.ParseBool(envRPCClient)
+		if err == nil {
+			cfg.RPCClient = parseBool
+		} else {
+			log.Println("error parse RPC_CLIENT variable, must be bool value")
+		}
+	}
 
 	if envPrivateKeyPath := os.Getenv("CRYPTO_KEY"); envPrivateKeyPath != "" {
 		cfg.PublicKeyPath = envPrivateKeyPath
@@ -100,8 +118,8 @@ func NewConfig() *Config {
 		cfg.PollInterval = time.Duration(pollIntervalSeconds) * time.Second
 	}
 	// set address for update metric
-	cfg.UpdateMetricAddress = fmt.Sprintf("%s://%s/update/", "http", cfg.Address)
-	cfg.UpdateMetricsAddress = fmt.Sprintf("%s://%s/updates/", "http", cfg.Address)
+	cfg.UpdateMetricAddress = fmt.Sprintf("http://localhost%s/update/", cfg.Address)
+	cfg.UpdateMetricsAddress = fmt.Sprintf("http://localhost%s/updates/", cfg.Address)
 
 	if cfg.PublicKeyPath != "" {
 		publicKey, err := cfg.getPublicKey()

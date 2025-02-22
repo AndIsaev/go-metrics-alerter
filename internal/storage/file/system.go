@@ -10,20 +10,8 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
-// CreateDir create dir
-func (fm *Manager) CreateDir(fileStoragePath string) error {
-	if _, err := os.Stat(fileStoragePath); os.IsNotExist(err) {
-		if err = os.Mkdir(fileStoragePath, 0755); err != nil {
-			log.Printf("the directory %s not created\n", fileStoragePath)
-			return err
-		}
-	}
-	log.Printf("the directory %s is done\n", fileStoragePath)
-	return nil
-}
-
-// Overwrite save metrics in disc
-func (fm *Manager) Overwrite(ctx context.Context, newData []common.Metrics) error {
+// Overwrite save metrics to disc
+func (fm *Manager) Overwrite(ctx context.Context, metrics []common.Metrics) error {
 	if ctx.Err() != nil {
 		log.Println("context is done -> exit from Overwrite")
 		return ctx.Err()
@@ -37,7 +25,7 @@ func (fm *Manager) Overwrite(ctx context.Context, newData []common.Metrics) erro
 	defer file.Close()
 
 	fm.producer = json.NewEncoder(file)
-	err = fm.producer.Encode(newData)
+	err = fm.producer.Encode(metrics)
 	if err != nil {
 		log.Printf("error save row to disc")
 		return errors.Unwrap(err)

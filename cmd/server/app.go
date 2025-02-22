@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -13,13 +14,18 @@ import (
 	"syscall"
 	"time"
 
+	"google.golang.org/grpc"
+
+	pb "github.com/AndIsaev/go-metrics-alerter/internal/service/proto"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/rpc"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/mailru/easyjson"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 	"github.com/AndIsaev/go-metrics-alerter/internal/logger"
-	"github.com/AndIsaev/go-metrics-alerter/internal/service/server"
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/handler"
 	mid "github.com/AndIsaev/go-metrics-alerter/internal/service/server/middleware"
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
@@ -30,14 +36,15 @@ import (
 
 // ServerApp - structure of application
 type ServerApp struct {
-	Router    chi.Router
-	Conn      storage.Storage
-	Config    *Config
-	Server    *http.Server
-	Handler   *handler.Handler
-	fm        *file.Manager
-	wg        sync.WaitGroup
-	chMetrics chan []common.Metrics
+	Router     chi.Router
+	Conn       storage.Storage
+	Config     *Config
+	Server     *http.Server
+	GRPCServer *grpc.Server
+	Handler    *handler.Handler
+	fm         file.Provider
+	wg         sync.WaitGroup
+	chMetrics  chan []common.Metrics
 }
 
 // New - create new app
@@ -45,19 +52,8 @@ func New() *ServerApp {
 	app := &ServerApp{}
 	app.Config = NewConfig()
 	app.chMetrics = make(chan []common.Metrics)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	// init file storage
-	err := app.initStorage(ctx)
-	if err != nil {
-		log.Fatalf("error init storage%v\n", err.Error())
-	}
-
 	app.Router = chi.NewRouter()
-
 	app.Handler = &handler.Handler{}
-	app.Handler.MetricService = &server.Methods{Storage: app.Conn}
 
 	return app
 }
@@ -72,11 +68,11 @@ func (a *ServerApp) StartApp() error {
 	defer cancel()
 	defer a.shutdown(ctx) // закрываем соединения
 
-	// init router
-	a.initRouter()
-
-	// init HTTP server
-	a.initHTTPServer()
+	err := a.initStorage(ctx)
+	if err != nil {
+		log.Printf("error init storage %v\n", err)
+		return err
+	}
 
 	if a.fm != nil && a.Config.StoreInterval != 0 {
 		a.wg.Add(2)
@@ -108,13 +104,19 @@ func (a *ServerApp) StartApp() error {
 
 // startHTTPServer - start http server
 func (a *ServerApp) startHTTPServer() error {
-	log.Printf("start server on %s\n", a.Config.Address)
+	log.Printf("start http server on %s\n", a.Config.Address)
 	return a.Server.ListenAndServe()
 }
 
-// initHTTPServer - init http server
-func (a *ServerApp) initHTTPServer() {
-	a.Server = &http.Server{Handler: a.Router, Addr: a.Config.Address}
+// startGRPCServer - start grpc server
+func (a *ServerApp) startGRPCServer() error {
+	log.Printf("start grpc server on %s\n", a.Config.Address)
+	listen, err := net.Listen("tcp", a.Config.Address)
+	if err != nil {
+		return err
+	}
+
+	return a.GRPCServer.Serve(listen)
 }
 
 // Shutdown close connections
@@ -122,10 +124,12 @@ func (a *ServerApp) shutdown(ctx context.Context) {
 	if a.fm != nil {
 		a.fm.Close()
 	}
-	err := a.Conn.System().Close(ctx)
-	if err != nil {
-		log.Printf("error close storage: %v\n", err.Error())
-		return
+	if a.Conn != nil {
+		err := a.Conn.System().Close(ctx)
+		if err != nil {
+			log.Printf("error close storage: %v\n", err.Error())
+			return
+		}
 	}
 }
 
@@ -141,6 +145,9 @@ func (a *ServerApp) initRouter() {
 			log.Printf("Error get private key: %v\n", err)
 		}
 		r.Use(mid.DecryptMiddleware(privateKey))
+	}
+	if a.Config.TrustedSubnet != "" {
+		r.Use(mid.TrustedSubnetMiddleware(a.Config.TrustedSubnet))
 	}
 
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
@@ -208,10 +215,10 @@ func (a *ServerApp) initStorage(ctx context.Context) error {
 
 			a.Conn = conn
 		} else {
-			var syncFileManager *file.Manager
+			var FileProvider file.Provider
 			var syncSave = false
 			if a.Config.FileStoragePath != "" {
-				if err := a.fm.CreateDir(a.Config.FileStoragePath); err != nil {
+				if err := file.CreateDir(a.Config.FileStoragePath); err != nil {
 					log.Printf("error create directory: %s\n", err.Error())
 					return err
 				}
@@ -224,14 +231,14 @@ func (a *ServerApp) initStorage(ctx context.Context) error {
 				a.fm = fileManager
 
 				if a.Config.StoreInterval == 0 {
-					syncFileManager = fileManager
+					FileProvider = fileManager
 					syncSave = true
 				}
 				if a.Config.Restore {
-					syncFileManager = fileManager
+					FileProvider = fileManager
 				}
 			}
-			a.Conn = inmemory.NewMemStorage(syncFileManager, syncSave)
+			a.Conn = inmemory.NewMemStorage(FileProvider, syncSave)
 		}
 
 		if a.Config.Restore {
@@ -268,24 +275,47 @@ func (a *ServerApp) runServer(ctx context.Context) {
 
 	// Запускаем сервер в отдельной горутине
 	go func() {
-		if err := a.startHTTPServer(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			serverErrChan <- fmt.Errorf("HTTP server error: %w", err)
+		if !a.Config.RPCServer {
+			a.Handler.MetricService = &server.Methods{Storage: a.Conn}
+			// init http router
+			a.initRouter()
+			// params for http server
+			a.Server = &http.Server{Handler: a.Router, Addr: a.Config.Address}
+
+			if err := a.startHTTPServer(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				serverErrChan <- fmt.Errorf("HTTP server error: %w", err)
+			}
+		} else {
+			// init GRPC server
+			a.GRPCServer = grpc.NewServer()
+			// set params for GRPC interface
+			pb.RegisterMetricServiceServer(a.GRPCServer, &rpc.MetricServiceServer{Storage: a.Conn})
+
+			if err := a.startGRPCServer(); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+				serverErrChan <- fmt.Errorf("GRPC server error: %w", err)
+			}
 		}
+
 		close(serverErrChan) // Закрываем канал после завершения работы сервера
 	}()
 
 	select {
 	case err := <-serverErrChan:
 		if err != nil {
-			log.Println(err)
+			log.Printf("got error from server chan: %v\n", err)
 		}
 	case <-ctx.Done():
-		// Если контекст отменен, корректно завершаем HTTP-сервер
+		// Если контекст отменен, корректно завершаем работу сервера
 		shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancelShutdown()
 
+		if a.Config.RPCServer {
+			a.GRPCServer.GracefulStop()
+			log.Println("GRPC server shutdown gracefully")
+			return
+		}
 		if err := a.Server.Shutdown(shutdownCtx); err != nil {
-			log.Printf("HTTP server shutdown error: %v", err)
+			log.Printf("HTTP server shutdown error: %v\n", err)
 		} else {
 			log.Println("HTTP server shutdown gracefully")
 		}

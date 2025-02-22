@@ -9,14 +9,6 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 )
 
-func linkFloat64(num float64) *float64 {
-	return &num
-}
-
-func linkInt64(num int64) *int64 {
-	return &num
-}
-
 // Функция для создания мок базы данных и Sqlx обертки
 func setupMockDB(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock) {
 	db, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
@@ -31,8 +23,8 @@ func setupMockDB(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock) {
 // Функция для создания ожидаемых результатов
 func expectedMetrics() []common.Metrics {
 	return []common.Metrics{
-		{ID: "metric1", MType: "gauge", Value: linkFloat64(24.5)},
-		{ID: "metric2", MType: "counter", Delta: linkInt64(5)},
+		{ID: "metric1", MType: "gauge", Value: common.LinkFloat64(24.5)},
+		{ID: "metric2", MType: "counter", Delta: common.LinkInt64(5)},
 	}
 }
 

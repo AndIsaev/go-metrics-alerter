@@ -18,7 +18,7 @@ func (h *Handler) SetMetricHandler() http.HandlerFunc {
 
 		// check value is specified for the metric type
 		if !IsCorrectType(MetricType) {
-			http.Error(w, "An incorrect value is specified for the metric type", http.StatusBadRequest)
+			http.Error(w, "an incorrect value is specified for the metric type", http.StatusBadRequest)
 			return
 		}
 		MetricValue, err := DefineMetricValue(MetricType, chi.URLParam(r, "MetricValue"))
@@ -49,7 +49,7 @@ func (h *Handler) UpdateRowHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if metric.IsValidType() && metric.IsValidValue() {
+		if !metric.IsValidType() || !metric.IsValidValue() {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
