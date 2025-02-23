@@ -2,6 +2,7 @@ package inmemory
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
@@ -116,17 +117,27 @@ func (m *MemStorage) Insert(ctx context.Context, metric common.Metrics) (common.
 		log.Println("context is done -> exit from Insert")
 		return common.Metrics{}, ctx.Err()
 	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.Metrics[metric.ID] = metric
 
-	err := m.saveMetricsToDisc(ctx)
+	existsMetric, err := m.GetByName(ctx, metric.ID)
+
+	if errors.Is(err, storage.ErrValueNotFound) {
+		return metric, m.create(ctx, metric)
+	} else if err != nil {
+		return common.Metrics{}, err
+	}
+	existsMetric.Delta = common.LinkInt64(*existsMetric.Delta + *metric.Delta)
+	err = m.create(ctx, existsMetric)
+	if err != nil {
+		return common.Metrics{}, err
+	}
+
+	err = m.saveMetricsToDisc(ctx)
 	if err != nil {
 		log.Println("error save metrics to disc")
 		return common.Metrics{}, err
 	}
 
-	return metric, nil
+	return existsMetric, err
 }
 
 func (m *MemStorage) create(ctx context.Context, metric common.Metrics) error {

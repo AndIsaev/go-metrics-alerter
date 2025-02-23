@@ -12,17 +12,9 @@ import (
 	"github.com/AndIsaev/go-metrics-alerter/internal/storage"
 )
 
-func int64Ptr(i int64) *int64 {
-	return &i
-}
-
-func float64Ptr(i float64) *float64 {
-	return &i
-}
-
 func TestMemStorage_GetByNameType(t *testing.T) {
-	delta := int64Ptr(100)
-	value := float64Ptr(12.34)
+	delta := common.LinkInt64(100)
+	value := common.LinkFloat64(12.34)
 	inMemStorage := &MemStorage{
 		Metrics: map[string]common.Metrics{
 			"metric1": {ID: "metric1", MType: common.Counter, Delta: delta},
@@ -80,8 +72,8 @@ func TestMemStorage_GetByNameType(t *testing.T) {
 }
 
 func TestMemStorage_create(t *testing.T) {
-	delta := int64Ptr(100)
-	value := float64Ptr(12.34)
+	delta := common.LinkInt64(100)
+	value := common.LinkFloat64(12.34)
 	inMemStorage := NewMemStorage(nil, false)
 
 	tests := []struct {
@@ -124,8 +116,8 @@ func TestMemStorage_create(t *testing.T) {
 }
 
 func TestMemStorage_List(t *testing.T) {
-	delta := int64Ptr(100)
-	value := float64Ptr(12.34)
+	delta := common.LinkInt64(100)
+	value := common.LinkFloat64(12.34)
 	inMemStorage := &MemStorage{
 		Metrics: map[string]common.Metrics{
 			"metric1": {ID: "metric1", MType: common.Counter, Delta: delta},
@@ -168,8 +160,8 @@ func TestMemStorage_List(t *testing.T) {
 }
 
 func TestMemStorage_GetByName(t *testing.T) {
-	delta := int64Ptr(100)
-	value := float64Ptr(12.34)
+	delta := common.LinkInt64(100)
+	value := common.LinkFloat64(12.34)
 	inMemStorage := &MemStorage{
 		Metrics: map[string]common.Metrics{
 			"metric1": {ID: "metric1", MType: common.Counter, Delta: delta},
@@ -185,19 +177,19 @@ func TestMemStorage_GetByName(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "Valid Counter Metric",
+			name:    "valid_counter",
 			mName:   "metric1",
 			want:    common.Metrics{ID: "metric1", MType: common.Counter, Delta: delta},
 			wantErr: nil,
 		},
 		{
-			name:    "Valid Gauge Metric",
+			name:    "valid_gauge",
 			mName:   "metric2",
 			want:    common.Metrics{ID: "metric2", MType: common.Gauge, Value: value},
 			wantErr: nil,
 		},
 		{
-			name:    "Non-existent Metric",
+			name:    "non_existent_metric",
 			mName:   "unknown",
 			wantErr: storage.ErrValueNotFound,
 		},
@@ -218,34 +210,31 @@ func TestMemStorage_GetByName(t *testing.T) {
 }
 
 func TestMemStorage_Insert(t *testing.T) {
-	delta := int64Ptr(100)
-	value := float64Ptr(12.34)
+	delta := common.LinkInt64(100)
+	value := common.LinkFloat64(12.34)
 	inMemStorage := NewMemStorage(nil, false)
 
 	tests := []struct {
 		name string
 		want common.Metrics
 	}{
-		{"Valid Counter Metric", common.Metrics{ID: "metric1", MType: common.Counter, Delta: delta}},
-		{"Valid Gauge Metric", common.Metrics{ID: "metric2", MType: common.Gauge, Value: value}},
+		{"valid_counter", common.Metrics{ID: "metric1", MType: common.Counter, Delta: delta}},
+		{"valid_gauge", common.Metrics{ID: "metric2", MType: common.Gauge, Value: value}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, _ := inMemStorage.Insert(context.Background(), tt.want)
 			existsMetric, err := inMemStorage.GetByName(context.Background(), tt.want.ID)
-			if err == nil {
-				assert.Equal(t, existsMetric, got)
-				return
-			}
-			t.Errorf("MemStorage.Insert() = %v, want %v", got, tt.want)
+			assert.Equal(t, got, existsMetric)
+			assert.NoError(t, err)
 		})
 	}
 }
 
 func TestMemStorage_InsertBatch(t *testing.T) {
-	delta := int64Ptr(100)
-	value := float64Ptr(12.34)
-	updatedValue := int64Ptr(*delta + *delta)
+	delta := common.LinkInt64(100)
+	value := common.LinkFloat64(12.34)
+	updatedValue := common.LinkInt64(*delta + *delta)
 	inMemStorage := NewMemStorage(nil, false)
 	inMemStorage.Insert(context.Background(), common.Metrics{ID: "existsMetric", MType: common.Counter, Delta: delta})
 
@@ -255,7 +244,7 @@ func TestMemStorage_InsertBatch(t *testing.T) {
 		want []common.Metrics
 	}{
 		{
-			name: "insert batch metrics",
+			name: "insert_batch",
 			body: []common.Metrics{
 				{ID: "existsMetric", MType: common.Counter, Delta: delta},
 				{ID: "metric1", MType: common.Counter, Delta: delta},
@@ -288,9 +277,9 @@ func TestMemStorage_InsertBatch(t *testing.T) {
 func TestMemStorage_UpsertByValue(t *testing.T) {
 	incorrectDelta := "100"
 	incorrectValue := "12.34"
-	intDelta := int64Ptr(100)
-	floatValue := float64Ptr(12.34)
-	updatedValue := int64Ptr(*intDelta + *intDelta)
+	intDelta := common.LinkInt64(100)
+	floatValue := common.LinkFloat64(12.34)
+	updatedValue := common.LinkInt64(*intDelta + *intDelta)
 	inMemStorage := NewMemStorage(nil, false)
 	inMemStorage.Insert(context.Background(), common.Metrics{ID: "metric5", MType: common.Counter, Delta: intDelta})
 
@@ -302,35 +291,35 @@ func TestMemStorage_UpsertByValue(t *testing.T) {
 		wantErr error
 	}{
 		{
-			"Valid Counter Metric",
+			"valid_counter",
 			common.Metrics{ID: "metric1", MType: common.Counter},
 			*intDelta,
 			common.Metrics{ID: "metric1", MType: common.Counter, Delta: intDelta},
 			nil,
 		},
 		{
-			"Valid Gauge Metric",
+			"valid_gauge",
 			common.Metrics{ID: "metric2", MType: common.Gauge},
 			*floatValue,
 			common.Metrics{ID: "metric2", MType: common.Gauge, Value: floatValue},
 			nil,
 		},
 		{
-			"Incorrect Counter Metric",
+			"incorrect_counter",
 			common.Metrics{ID: "metric3", MType: common.Counter},
 			incorrectDelta,
 			common.Metrics{ID: "metric3", MType: common.Counter, Delta: intDelta},
 			storage.ErrMetricValue,
 		},
 		{
-			"Incorrect Gauge Metric",
+			"incorrect_gauge",
 			common.Metrics{ID: "metric4", MType: common.Gauge},
 			incorrectValue,
 			common.Metrics{ID: "metric4", MType: common.Gauge, Value: floatValue},
 			storage.ErrMetricValue,
 		},
 		{
-			"Update Counter Metric",
+			"update_count",
 			common.Metrics{ID: "metric5", MType: common.Counter},
 			*intDelta,
 			common.Metrics{ID: "metric5", MType: common.Counter, Delta: updatedValue},
