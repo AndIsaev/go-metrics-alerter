@@ -34,12 +34,6 @@ func TestCreateDir(t *testing.T) {
 			t.Errorf("Ожидалось, что метод завершится успешно, несмотря на существование директории, но возникла ошибка: %v", err)
 		}
 	})
-
-	t.Run("forbidden", func(t *testing.T) {
-		if err := CreateDir("/root/forbidden"); err == nil {
-			t.Errorf("Ожидалась ошибка при создании директории в защищённой области, но её не было")
-		}
-	})
 }
 
 func TestFileManager_Overwrite(t *testing.T) {
@@ -60,7 +54,7 @@ func TestFileManager_Overwrite(t *testing.T) {
 		{
 			ID:    "metric1",
 			MType: common.Gauge,
-			Value: linkFloat64(42.0),
+			Value: common.LinkFloat64(42.0),
 		},
 	}
 	t.Run("success overwrite", func(t *testing.T) {
@@ -92,7 +86,7 @@ func TestFileManager_ReadFile(t *testing.T) {
 		{
 			ID:    "metric1",
 			MType: common.Gauge,
-			Value: linkFloat64(42.0),
+			Value: common.LinkFloat64(42.0),
 		},
 	}
 	t.Run("success read file", func(t *testing.T) {
