@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -13,6 +13,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/config"
 
 	"google.golang.org/grpc"
 
@@ -38,7 +40,7 @@ import (
 type ServerApp struct {
 	Router     chi.Router
 	Conn       storage.Storage
-	Config     *Config
+	Config     *config.Config
 	Server     *http.Server
 	GRPCServer *grpc.Server
 	Handler    *handler.Handler
@@ -50,7 +52,7 @@ type ServerApp struct {
 // New - create new app
 func New() *ServerApp {
 	app := &ServerApp{}
-	app.Config = NewConfig()
+	app.Config = config.NewConfig()
 	app.chMetrics = make(chan []common.Metrics)
 	app.Router = chi.NewRouter()
 	app.Handler = &handler.Handler{}

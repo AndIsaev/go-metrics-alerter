@@ -1,9 +1,11 @@
-package main
+package app
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/server/config"
 
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +23,7 @@ func TestInitStorage(t *testing.T) {
 	require.NotNil(t, storage)
 }
 func TestInitRouter(t *testing.T) {
-	config := &Config{}
+	config := &config.Config{}
 
 	app := &ServerApp{
 		Router:  chi.NewRouter(),

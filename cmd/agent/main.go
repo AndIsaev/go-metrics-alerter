@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/app"
+
 	"github.com/AndIsaev/go-metrics-alerter/internal/service/gen"
 )
 
@@ -17,6 +19,6 @@ func main() {
 	if err := gen.InitVersion(buildVersion, buildDate, buildCommit); err != nil {
 		log.Fatal(err)
 	}
-	app := New()
+	app := app.New()
 	app.StartApp()
 }

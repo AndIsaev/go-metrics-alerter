@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/config"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,7 +24,7 @@ import (
 // AgentApp structure of application
 type AgentApp struct {
 	// Config use for settings of app
-	Config *Config
+	Config *config.Config
 	// Client use for requests to server
 	Client client.RequestClient
 	mu     sync.RWMutex
@@ -33,7 +35,7 @@ type AgentApp struct {
 // New create and return new AgentApp
 func New() *AgentApp {
 	app := &AgentApp{}
-	config := NewConfig()
+	config := config.NewConfig()
 	app.Config = config
 	return app
 }

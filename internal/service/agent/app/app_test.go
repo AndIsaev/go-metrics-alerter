@@ -1,9 +1,11 @@
-package main
+package app
 
 import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/AndIsaev/go-metrics-alerter/internal/service/agent/config"
 
 	"github.com/AndIsaev/go-metrics-alerter/internal/common"
 
@@ -17,12 +19,12 @@ import (
 func TestNew(t *testing.T) {
 	app := New()
 	assert.NotNil(t, app.Config)
-	assert.IsType(t, &Config{}, app.Config)
+	assert.IsType(t, &config.Config{}, app.Config)
 }
 
 func TestInitRequestClient(t *testing.T) {
 	app := New()
-	app.Config = NewConfig()
+	app.Config = config.NewConfig()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -48,7 +50,7 @@ func TestInitRequestClient(t *testing.T) {
 
 func TestInitHTTPClient(t *testing.T) {
 	app := New()
-	app.Config = NewConfig()
+	app.Config = config.NewConfig()
 
 	app.initHTTPClient()
 
@@ -59,7 +61,7 @@ func TestInitGRPCClient(t *testing.T) {
 	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	app := New()
-	app.Config = NewConfig()
+	app.Config = config.NewConfig()
 
 	app.initGRPCClient(cancel)
 
@@ -87,7 +89,7 @@ func TestPullMetrics(t *testing.T) {
 	mapMetrics := NewListMockStorageMetrics()
 
 	mockStorage := &MockStorageMetrics{Metrics: mapMetrics.Metrics}
-	config := &Config{
+	config := &config.Config{
 		StorageMetrics: mockStorage,
 		PollInterval:   100 * time.Millisecond,
 	}
@@ -132,7 +134,7 @@ func (c *MockClient) SendMetrics(_ context.Context, _ []common.Metrics) error {
 
 func TestRunWorkers(t *testing.T) {
 	mockClient := &MockClient{}
-	config := &Config{
+	config := &config.Config{
 		RateLimit:      3,
 		ReportInterval: 50 * time.Millisecond,
 	}
